@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hadits Hmadsanusi</title>
+<style>
+  body {
+    background: #0f172a;
+    color: #e2e8f0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+  }
+
+  .card {
+    background: #1e293b;
+    border: 1px solid #22c55e;
+    border-radius: 16px;
+    padding: 25px;
+    max-width: 650px;
+    width: 100%;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  }
+
+  h1 {
+    text-align: center;
+    color: #4ade80;
+    font-size: 22px;
+    margin-bottom: 20px;
+  }
+
+  .arab {
+    font-size: 26px;
+    text-align: right;
+    direction: rtl;
+    line-height: 2;
+    margin-bottom: 18px;
+    font-family: 'Amiri', serif;
+  }
+
+  .arti {
+    font-size: 16px;
+    line-height: 1.7;
+    color: #e2e8f0;
+    border-left: 3px solid #22c55e;
+    padding-left: 15px;
+    margin-bottom: 15px;
+  }
+
+  .meta {
+    text-align: center;
+    font-size: 13px;
+    color: #94a3b8;
+  }
+
+  button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 20px;
+    background: #22c55e;
+    border: none;
+    border-radius: 10px;
+    color: #0f172a;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  button:disabled { opacity: 0.6; }
+  .loading, .error { text-align: center; color: #94a3b8; }
+  .error { color: #f87171; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>📚 Hadits Random</h1>
+  <div id="content">
+    <div class="loading">Mengambil hadits...</div>
+  </div>
+  <button id="btn" onclick="loadHadis()">Hadits Lainnya</button>
+</div>
+
+<script>
+const API_KEY = "ask_M-B_Mw1kLRGZHzJWmd6EvlKd_gVZF7sVG4HXGmlQA7Q";
+const API_URL = "https://hmadsanusi.com/api/hadith/random";
+
+async function loadHadis() {
+  const content = document.getElementById('content');
+  const btn = document.getElementById('btn');
+  btn.disabled = true;
+  content.innerHTML = '<div class="loading">Mengambil hadits...</div>';
+  
+  try {
+    const res = await fetch(API_URL, {
+      method: 'GET',
+      headers: {
+        "Authorization": "Bearer " + API_KEY,
+        "Accept": "application/json"
+      }
+    });
+    
+    const json = await res.json();
+    
+    if (json.status === true || json.success === true) {
+      const h = json.data || json;
+      content.innerHTML = `
+        <div class="arab">${h.arab || h.text_ar || '-'}</div>
+        <div class="arti">${h.indo || h.translation || h.text_id || '-'}</div>
+        <div class="meta">${h.perawi || h.book || ''} ${h.nomor ? '• No. ' + h.nomor : ''}</div>
+      `;
+    } else {
+      content.innerHTML = '<div class="error">Gagal ambil data. Cek API key</div>';
+    }
+  } catch (e) {
+    content.innerHTML = '<div class="error">Koneksi error. Cek internet</div>';
+    console.error(e);
+  }
+  
+  btn.disabled = false;
+}
+
+loadHadis();
+</script>
+
+</body>
+</html>

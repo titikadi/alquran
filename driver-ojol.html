@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Driver KiadiOjek</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#00AA13"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"/>
+  <style>
+    :root { --primary:#00AA13; --bg:#f0f0f0; --card:#fff; --text:#333; --warning:#ffc107; --danger:#dc3545; --info:#0d6efd;}
+    [data-theme="dark"] { --primary:#00AA13; --bg:#121212; --card:#1e1e1e; --text:#eee; }
+    *{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif}
+    body{background:var(--bg);color:var(--text);transition:.3s}
+.hidden{display:none!important}
+.page{padding-bottom:70px;min-height:100vh}
+    #map{height:50vh;width:100%}
+.leaflet-container{z-index:1!important}
+.header{background:var(--primary);color:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1000}
+.status-bar{background:var(--card);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
+.toggle-switch{position:relative;width:60px;height:30px}
+.toggle-switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ccc;transition:.4s;border-radius:30px}
+.slider:before{position:absolute;content:"";height:22px;width:22px;left:4px;bottom:4px;background:white;transition:.4s;border-radius:50%}
+    input:checked+.slider{background:var(--primary)}
+    input:checked+.slider:before{transform:translateX(30px)}
+    input:disabled+.slider{background:#eee;cursor:not-allowed}
+.offline{color:#999;font-weight:bold}
+.online{color:var(--primary);font-weight:bold}
+.pending{color:var(--warning);font-weight:bold}
+.container{padding:12px}
+.card{background:var(--card);margin:8px 0;padding:16px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.btn{background:var(--primary);color:white;border:none;padding:12px;width:100%;border-radius:8px;font-size:16px;font-weight:bold;margin-top:8px;cursor:pointer}
+.btn:disabled{background:#ccc;cursor:not-allowed}
+.btn-danger{background:var(--danger)}
+.btn-warning{background:var(--warning);color:#000}
+.btn-info{background:var(--info)}
+.btn-row{display:flex;gap:8px}
+    input,select,textarea{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:8px;font-size:16px;background:var(--card);color:var(--text)}
+.auth-page{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--primary);z-index:1000;display:flex;align-items:center;justify-content:center}
+.auth-box{background:var(--card);padding:24px;border-radius:16px;width:90%;max-width:400px;max-height:90vh;overflow-y:auto}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);display:flex;justify-content:space-around;padding:8px 0;box-shadow:0 -2px 8px rgba(0,0,0,0.1);z-index:999}
+.nav-item{text-align:center;font-size:12px;color:#666;cursor:pointer;padding:4px 12px;border-radius:8px;opacity:0.6}
+.nav-item.active{color:var(--primary);font-weight:bold;background:rgba(0,170,19,0.1);opacity:1}
+.nav-icon{width:24px;height:24px;margin-bottom:2px;object-fit:contain}
+.chat-box{height:calc(100vh - 280px);overflow-y:auto;border:1px solid #ddd;padding:8px;border-radius:8px;margin:8px 0}
+.chat-msg{margin:8px 0;padding:8px;border-radius:8px;max-width:80%;word-wrap:break-word}
+.chat-me{background:var(--primary);color:white;margin-left:auto}
+.chat-you{background:#eee;color:#333}
+.badge{background:var(--danger);color:white;border-radius:10px;padding:2px 6px;font-size:12px;position:absolute;top:0;right:8px}
+.theme-toggle{font-size:20px;cursor:pointer}
+.empty{text-align:center;padding:40px;color:#999}
+.order-info{display:flex;justify-content:space-between;margin:4px 0;font-size:14px;color:#666}
+.preview-img{width:100%;max-height:150px;object-fit:cover;border-radius:8px;margin:8px 0;display:none}
+.file-label{display:block;background:#eee;padding:12px;border-radius:8px;text-align:center;margin:8px 0;cursor:pointer}
+.status-verify{padding:12px;border-radius:8px;text-align:center;font-weight:bold;margin-bottom:12px}
+.status-verify.pending{background:#fff3cd;color:#856404}
+.status-verify.verified{background:#d4edda;color:#155724}
+.status-verify.rejected{background:#f8d7da;color:#721c24}
+.loading{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;color:white;font-size:18px}
+.status-badge{padding:4px 8px;border-radius:6px;font-size:12px;font-weight:bold}
+.status-baru{background:#f8d7da;color:#721c24}
+.status-diproses{background:#fff3cd;color:#856404}
+.status-selesai{background:#d4edda;color:#155724}
+.gopay-box{background:#e8f5e9;padding:12px;border-radius:8px;margin:8px 0;text-align:center;border:2px dashed var(--primary)}
+  </style>
+</head>
+<body data-theme="light">
+
+  <div id="loading" class="loading hidden">Sedang kompres foto...</div>
+
+  <!-- HALAMAN LOGIN -->
+  <div id="loginPage" class="auth-page">
+    <div class="auth-box">
+      <h2 style="text-align:center;color:var(--primary)">🛵 LOGIN DRIVER</h2>
+      <input type="email" id="loginEmail" placeholder="Email">
+      <input type="password" id="loginPassword" placeholder="Password">
+      <button class="btn" onclick="loginDriver()">MASUK</button>
+      <p style="text-align:center;margin-top:12px">
+        <a href="#" onclick="showAuth('registerPage')">Daftar Driver</a> |
+        <a href="#" onclick="resetPassword()">Lupa Password?</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- HALAMAN DAFTAR -->
+  <div id="registerPage" class="auth-page hidden">
+    <div class="auth-box">
+      <h2 style="text-align:center;color:var(--primary)">📝 DAFTAR DRIVER</h2>
+      <input type="email" id="regEmail" placeholder="Email*" required>
+      <input type="password" id="regPassword" placeholder="Password*" required>
+      <input type="text" id="regNama" placeholder="Nama Sesuai KTP*" required>
+
+      <label class="file-label" for="regFotoWajah">📷 Pilih Foto Wajah* <small>Max 5MB</small></label>
+      <input type="file" id="regFotoWajah" accept="image/*" style="display:none" onchange="handleImage(this,'prevWajah','wajah')">
+      <img id="prevWajah" class="preview-img">
+
+      <label class="file-label" for="regFotoKTP">📷 Pilih Foto KTP* <small>Max 5MB</small></label>
+      <input type="file" id="regFotoKTP" accept="image/*" style="display:none" onchange="handleImage(this,'prevKTP','ktp')">
+      <img id="prevKTP" class="preview-img">
+
+      <input type="text" id="regKendaraan" placeholder="Nama Kendaraan* Ex: Honda Beat" required>
+      <input type="text" id="regPlat" placeholder="Plat Nomor* Ex: BM 1234 XX" required>
+      <input type="text" id="regWarna" placeholder="Warna Kendaraan*" required>
+      <input type="tel" id="regWA" placeholder="No HP/WhatsApp*" required>
+      <textarea id="regAlamat" placeholder="Alamat Rumah Lengkap*" required></textarea>
+      <select id="regGender" required>
+        <option value="">Pilih Jenis Kelamin*</option>
+        <option>Laki-laki</option>
+        <option>Perempuan</option>
+      </select>
+      <button class="btn" id="btnDaftar" onclick="registerDriver()">DAFTAR SEKARANG</button>
+      <p style="text-align:center;margin-top:12px"><a href="#" onclick="showAuth('loginPage')">Sudah punya akun? Login</a></p>
+    </div>
+  </div>
+
+  <!-- HALAMAN UTAMA -->
+  <div id="mainApp" class="hidden">
+
+    <!-- PAGE HOME -->
+    <div id="pageHome" class="page">
+      <div class="header">
+        <h1>🛵 <span id="namaDriver">Driver</span></h1>
+        <div>
+          <span id="saldoDriver">Rp 0</span>
+          <span class="theme-toggle" onclick="toggleTheme()">🌙</span>
+        </div>
+      </div>
+
+      <div id="statusVerifikasi" class="status-verify pending">⏳ Menunggu Verifikasi Admin</div>
+
+      <div class="status-bar">
+        <span id="statusText" class="offline">OFFLINE</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="onlineToggle" onchange="toggleOnline()" disabled>
+          <span class="slider"></span>
+        </label>
+        <button onclick="refreshLocation()" style="background:none;border:none;font-size:20px">🔄</button>
+      </div>
+
+      <div id="map"></div>
+
+      <div class="container">
+        <div id="orderList"><div class="empty">KebahagianDriver Bagian Dari Kami</div></div>
+      </div>
+    </div>
+
+    <!-- PAGE RIWAYAT -->
+    <div id="pageRiwayat" class="page hidden">
+      <div class="header">
+        <h1>📋 Riwayat Order</h1>
+        <span class="theme-toggle" onclick="toggleTheme()">🌙</span>
+      </div>
+      <div class="container">
+        <div id="riwayatList"><div class="empty">Belum ada riwayat</div></div>
+      </div>
+    </div>
+
+    <!-- PAGE CHAT -->
+    <div id="pageChat" class="page hidden">
+      <div class="header">
+        <h1>💬 Chat Customer</h1>
+        <span class="theme-toggle" onclick="toggleTheme()">🌙</span>
+      </div>
+      <div class="container">
+        <div class="chat-box" id="chatBox"><div class="empty">Belum ada order aktif</div></div>
+        <input type="text" id="pesanChat" placeholder="Ketik pesan...">
+        <button class="btn" onclick="kirimChat()">KIRIM</button>
+      </div>
+    </div>
+
+    <!-- PAGE TOPUP -->
+    <div id="pageTopup" class="page hidden">
+      <div class="header">
+        <h1>💰 Top Up Saldo</h1>
+        <span class="theme-toggle" onclick="toggleTheme()">🌙</span>
+      </div>
+      <div class="container">
+        <div class="card">
+          <h3>Top Up Saldo</h3>
+          <p>Saldo: <b id="saldoTopup">Rp 0</b></p>
+          <div class="gopay-box">
+            <h4>Transfer ke GoPay Admin:</h4>
+            <div style="font-size:20px;font-weight:bold;margin:8px 0">083871036094</div>
+            <div>a.n KiadiOjek Admin</div>
+            <small>*Minimal top up Rp 20.000</small>
+          </div>
+          <input type="number" id="nominalTopup" placeholder="Nominal yang sudah di transfer">
+          <button class="btn" onclick="requestTopup()">KONFIRMASI TOP UP</button>
+          <small>*Transfer dulu ke GoPay di atas, lalu isi nominal & klik konfirmasi. Admin akan cek & isi saldo dalam 1x24 jam.</small>
+        </div>
+        <div class="card">
+          <h3>Riwayat Top Up</h3>
+          <div id="riwayatTopup"><div class="empty">Belum ada request</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE PROFIL -->
+    <div id="pageProfil" class="page hidden">
+      <div class="header">
+        <h1>👤 Profil Saya</h1>
+        <span class="theme-toggle" onclick="toggleTheme()">🌙</span>
+      </div>
+      <div class="container">
+        <div class="card">
+          <h3>Profil Saya</h3>
+          <img id="fotoProfil" src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png" width="80" style="border-radius:50%">
+          <input type="text" id="editNama" placeholder="Nama">
+          <label class="file-label" for="editFoto">📷 Ganti Foto Profil <small>Max 5MB</small></label>
+          <input type="file" id="editFoto" accept="image/*" style="display:none" onchange="handleImage(this,'fotoProfil','profil')">
+          <button class="btn" onclick="updateProfil()">SIMPAN</button>
+          <button class="btn btn-danger" onclick="logout()">LOGOUT</button>
+        </div>
+        <div class="card">
+          <h3>Pengaduan ke CS</h3>
+          <textarea id="isiAduan" placeholder="Tulis keluhan anda..."></textarea>
+          <button class="btn" onclick="kirimAduan()">KIRIM PENGADUAN</button>
+        </div>
+        <div class="card">
+          <h3>Riwayat Pengaduan</h3>
+          <div id="riwayatAduan"><div class="empty">Belum ada pengaduan</div></div>
+        </div>
+      </div>
+    </div>
+
+   <!-- BOTTOM NAV UDAH PAKE ICON SVG ASLI -->
+   <div class="bottom-nav">
+    <div class="nav-item active" onclick="switchPage('Home', this)">
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzAwQUE1QiI+PHBhdGggZD0iTTEwIDIwdjZoNHYtNmgtNHptNi0xMGwtNi02LTYgNnYxMGg0di02aDR2Nmg0VjEweiIvPjwvc3ZnPg==" class="nav-icon" id="iconHome"><br>Home
+    </div>
+    <div class="nav-item" onclick="switchPage('Riwayat', this)">
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzk5OSI+PHBhdGggZD0iTTE5IDNoLTR2MTJoNFYzeiBNMTEgM0g3djE4aDRWM3ogTTMgM2gydjE4SDNWM3oiLz48L3N2Zz4=" class="nav-icon" id="iconRiwayat"><br>Riwayat
+    </div>
+    <div class="nav-item" style="position:relative" onclick="switchPage('Chat', this)">
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzk5OSI+PHBhdGggZD0iTTIwIDJINGMtMS4xIDAtMiAuOS0yIDJ2MTJsMi00aDE2YzEuMSAwIDItLjkgMi0yVjRjMC0xLjEtLjktMi0yLTJ6Ii8+PC9zdmc+" class="nav-icon" id="iconChat"><br>Chat <span id="badgeChat" class="badge hidden">1</span>
+    </div>
+    <div class="nav-item" onclick="switchPage('Topup', this)">
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzk5OSI+PHBhdGggZD0iTTIwIDRINGMtMS4xMSAwLTIgLjg5LTIgMnYxMmMwIDEuMTEuODkgMiAyIDJoMTZjMS4xMSAwIDItLjg5IDItMlY2YzAtMS4xMS0uODktMi0yLTJ6bTAgMTRINFY2aDE2djEyem0tNS03SDl2Mmg2VjExeiIvPjwvc3ZnPg==" class="nav-icon" id="iconTopup"><br>Top Up
+    </div>
+    <div class="nav-item" onclick="switchPage('Profil', this)">
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzk5OSI+PHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYyaDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIvPjwvc3ZnPg==" class="nav-icon" id="iconProfil"><br>Profil
+    </div>
+  </div>
+
+  <audio id="notifSound" src="https://cdn.pixabay.com/audio/2022/08/23/audio_8c8c38f94a.mp3" preload="auto"></audio>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, query, where, onSnapshot, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyB_NCFRSw2RHE3rLHei9tiSYRrkOQoPhzA",
+      authDomain: "kiadin.firebaseapp.com",
+      projectId: "kiadin",
+      storageBucket: "kiadin.firebasestorage.app",
+      messagingSenderId: "598659347073",
+      appId: "1:598659347073:web:befad4319ad98c83a45380",
+      measurementId: "G-LHB2W95ZJT"
+    };
+    const GEOAPIFY_KEY = 'f8b346d145cc4b3eae066fdb22c91c55';
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let map, driverMarker, watchId, routingControl, currentUser, currentOrderId;
+    let isOnline = false, isVerified = false;
+    let base64Wajah = '', base64KTP = '', base64Profil = '';
+
+    let tarifDefault = {
+      tarifDasar: 6000,
+      tarifPerKm: 2000,
+      jarakMinimal: 2,
+      tarifMinimal: 8000,
+      pembulatan: 500
+    };
+
+    // ICON SVG BASE64 - AKTIF IJO, NON-AKTIF ABU
+    const icons = {
+      home: {
+        on: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzAwQUE1QiI+PHBhdGggZD0iTTEwIDIwdjZoNHYtNmgtNHptNi0xMGwtNi02LTYgNnYxMGg0di02aDR2Nmg0VjEweiIvPjwvc3ZnPg==',
+        off: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzk5OSI+PHBhdGggZD0iTTEwIDIwdjZoNHYtNmgtNHptNi0xMGwtNi02LTYgNnYxMGg0di02aDR2Nmg0VjEweiIvPjwvc3ZnPg=='
+      },
+      riwayat: {
+        on: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzAwQUE1QiI+PHBhdGggZD0iTTE5IDNoLTR2MTJoNFYzeiBNMTEgM0g3djE4aDRWM3ogTTMgM2gydjE4SDNWM3oiLz48L3N2Zz4=',
+        off: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzk5OSI+PHBhdGggZD0iTTE5IDNoLTR2MTJoNFYzeiBNMTEgM0g3djE4aDRWM3ogTTMgM2gydjE4SDNWM3oiLz48L3N2Zz4='
+      },
+      chat: {
+        on: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzAwQUE1QiI+PHBhdGggZD0iTTIwIDJINGMtMS4xIDAtMiAuOS0yIDJ2MTJsMi00aDE2YzEuMSAwIDItLjkgMi0yVjRjMC0xLjEtLjktMi0yLTJ6Ii8+PC9zdmc+',
+        off: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzk5OSI+PHBhdGggZD0iTTIwIDJINGMtMS4xIDAtMiAuOS0yIDJ2MTJsMi00aDE2YzEuMSAwIDItLjkgMi0yVjRjMC0xLjEtLjktMi0yLTJ6Ii8+PC9zdmc+'
+      },
+      topup: {
+        on: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzAwQUE1QiI+PHBhdGggZD0iTTIwIDRINGMtMS4xMSAwLTIgLjg5LTIgMnYxMmMwIDEuMTEuODkgMiAyIDJoMTZjMS4xMSAwIDItLjg5IDItMlY2YzAtMS4xMS0uODktMi0yLTJ6bTAgMTRINFY2aDE2djEyem0tNS03SDl2Mmg2VjExeiIvPjwvc3ZnPg==',
+        off: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzk5OSI+PHBhdGggZD0iTTIwIDRINGMtMS4xMSAwLTIgLjg5LTIgMnYxMmMwIDEuMTEuODkgMiAyIDJoMTZjMS4xMSAwIDItLjg5IDItMlY2YzAtMS4xMS0uODktMi0yLTJ6bTAgMTRINFY2aDE2djEyem0tNS03SDl2Mmg2VjExeiIvPjwvc3ZnPg=='
+      },
+      profil: {
+        on: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzAwQUE1QiI+PHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYyaDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIvPjwvc3ZnPg==',
+        off: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzk5OSI+PHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYyaDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIvPjwvc3ZnPg=='
+      }
+    };
+
+    async function loadTarifConfig() {
+      try {
+        const docSnap = await getDoc(doc(db, "settings", "tarif_default"));
+        if (docSnap.exists()) {
+          tarifDefault = docSnap.data();
+          console.log('Tarif driver update:', tarifDefault);
+        }
+      } catch(e) {
+        console.log('Pake tarif cadangan:', e);
+      }
+    }
+
+    window.handleImage = async (input, imgId, type) => {
+      const file = input.files[0];
+      if (!file) return;
+      if(file.size > 5*1024*1024) return alert('Foto max 5MB bro');
+
+      document.getElementById('loading').classList.remove('hidden');
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          const maxDim = 800;
+          if(width > maxDim || height > maxDim) {
+            if(width > height) {
+              height = height * (maxDim / width);
+              width = maxDim;
+            } else {
+              width = width * (maxDim / height);
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          let quality = 0.7;
+          let base64 = canvas.toDataURL('image/jpeg', quality);
+          while(base64.length > 200000 && quality > 0.1) {
+            quality -= 0.1;
+            base64 = canvas.toDataURL('image/jpeg', quality);
+          }
+
+          document.getElementById(imgId).src = base64;
+          document.getElementById(imgId).style.display = 'block';
+
+          if(type === 'wajah') base64Wajah = base64;
+          if(type === 'ktp') base64KTP = base64;
+          if(type === 'profil') {
+            base64Profil = base64;
+            updateDoc(doc(db, "drivers", currentUser.uid), { fotoWajah: base64 });
+          }
+
+          document.getElementById('loading').classList.add('hidden');
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUser = user;
+        await loadTarifConfig();
+        try {
+          const docSnap = await getDoc(doc(db, "drivers", user.uid));
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            isVerified = data.status === 'verified';
+            document.getElementById('namaDriver').textContent = data.nama;
+            document.getElementById('saldoDriver').textContent = 'Rp ' + (data.saldo || 0).toLocaleString('id-ID');
+            document.getElementById('saldoTopup').textContent = 'Rp ' + (data.saldo || 0).toLocaleString('id-ID');
+            document.getElementById('editNama').value = data.nama;
+            document.getElementById('fotoProfil').src = data.fotoWajah || 'https://cdn-icons-png.flaticon.com/512/4140/4140048.png';
+
+            const statusEl = document.getElementById('statusVerifikasi');
+            const toggleEl = document.getElementById('onlineToggle');
+            if(data.status === 'verified') {
+              statusEl.className = 'status-verify verified';
+              statusEl.textContent = '✅ Akun Terverifikasi - Siap Narik';
+              toggleEl.disabled = false;
+            } else if(data.status === 'rejected') {
+              statusEl.className = 'status-verify rejected';
+              statusEl.textContent = '❌ Ditolak: ' + (data.alasan || 'Data tidak valid');
+              toggleEl.disabled = true;
+            } else {
+              statusEl.className = 'status-verify pending';
+              statusEl.textContent = '⏳ Menunggu Verifikasi Admin 1x24 Jam';
+              toggleEl.disabled = true;
+            }
+
+            if ('Notification' in window && Notification.permission === 'default') {
+              Notification.requestPermission();
+            }
+
+            showMainApp();
+            if(isVerified) {
+              listenOrderMasuk();
+              listenRiwayat();
+            }
+            listenRiwayatTopup();
+            listenRiwayatAduan();
+          } else {
+            alert('Akun lu ada, tapi data driver belum lengkap.\nDaftar ulang atau hubungi admin.');
+            await signOut(auth);
+            showAuth('registerPage');
+          }
+        } catch (e) {
+          alert('Gagal ambil data: ' + e.message);
+          await signOut(auth);
+          showAuth('loginPage');
+        }
+      } else {
+        showAuth('loginPage');
+      }
+    });
+
+    window.loginDriver = async () => {
+      try {
+        await signInWithEmailAndPassword(auth, loginEmail.value, loginPassword.value);
+      } catch(e) { alert('Login gagal: ' + e.message); }
+    }
+
+    window.registerDriver = async () => {
+      const fields = [regEmail, regPassword, regNama, regKendaraan, regPlat, regWarna, regWA, regAlamat, regGender];
+      if (fields.some(f =>!f.value) ||!base64Wajah ||!base64KTP) {
+        return alert('Semua kolom * wajib diisi! Termasuk foto wajah & KTP');
+      }
+      document.getElementById('btnDaftar').disabled = true;
+      document.getElementById('btnDaftar').textContent = 'MENDAFTAR...';
+      try {
+        const cred = await createUserWithEmailAndPassword(auth, regEmail.value, regPassword.value);
+        await setDoc(doc(db, "drivers", cred.user.uid), {
+          email: regEmail.value, nama: regNama.value,
+          fotoWajah: base64Wajah,
+          fotoKTP: base64KTP,
+          kendaraan: regKendaraan.value, plat: regPlat.value, warna: regWarna.value,
+          wa: regWA.value, alamat: regAlamat.value, gender: regGender.value,
+          saldo: 0, online: false, status: 'pending',
+          createdAt: serverTimestamp()
+        });
+        alert('Pendaftaran berhasil! Tunggu verifikasi admin 1x24 jam');
+        showAuth('loginPage');
+      } catch(e) {
+        if (e.code === 'auth/email-already-in-use') {
+          alert('Email ini udah terdaftar bro.\nLangsung login aja pake email & password yang sama ya.');
+          showAuth('loginPage');
+          loginEmail.value = regEmail.value;
+        } else {
+          alert('Daftar gagal: ' + e.message);
+        }
+      } finally {
+        document.getElementById('btnDaftar').disabled = false;
+        document.getElementById('btnDaftar').textContent = 'DAFTAR SEKARANG';
+      }
+    }
+
+    window.resetPassword = () => {
+      const email = prompt('Masukkan email untuk reset password:');
+      if(email) sendPasswordResetEmail(auth, email).then(() => alert('Link reset dikirim ke email')).catch(e => alert(e.message));
+    }
+
+    function initMap() {
+      if(map) return;
+      map = L.map('map').setView([0, 0], 2);
+      L.tileLayer(`https://maps.geoapify.com/v1/tile/osm-bright/{z}/{x}/{y}.png?apiKey=${GEOAPIFY_KEY}`).addTo(map);
+
+      const driverIcon = L.icon({
+        iconUrl:'https://cdn-icons-png.flaticon.com/512/5811/5811823.png',
+        iconSize:[45,45],
+        iconAnchor:[22,45],
+        popupAnchor:[0,-45]
+      });
+      driverMarker = L.marker([0, 0], {icon:driverIcon}).addTo(map);
+    }
+
+    window.toggleOnline = async () => {
+      if(!isVerified) return alert('Akun belum diverifikasi admin bro');
+      isOnline = document.getElementById('onlineToggle').checked;
+      statusText.textContent = isOnline? 'ONLINE' : 'OFFLINE';
+      statusText.className = isOnline? 'online' : 'offline';
+      await updateDoc(doc(db, "drivers", currentUser.uid), { online: isOnline });
+      if(isOnline) startTracking(); else stopTracking();
+    }
+
+    function startTracking() {
+      if(!navigator.geolocation) return alert('HP lu ga support GPS bro');
+      navigator.geolocation.getCurrentPosition(pos => {
+        const lat = pos.coords.latitude, lng = pos.coords.longitude;
+        driverMarker.setLatLng([lat,lng]);
+        map.setView([lat,lng], 16);
+        updateDoc(doc(db, "drivers", currentUser.uid), { lat, lng, lastUpdate: serverTimestamp() });
+      }, err => {
+        alert('Gagal ambil GPS: ' + err.message + '\nAktifin GPS + Izinkan Lokasi di Chrome');
+        document.getElementById('onlineToggle').checked = false;
+        isOnline = false;
+        statusText.textContent = 'OFFLINE';
+        statusText.className = 'offline';
+      }, {enableHighAccuracy:true, timeout:10000});
+
+      watchId = navigator.geolocation.watchPosition(async pos => {
+        const lat = pos.coords.latitude, lng = pos.coords.longitude;
+        driverMarker.setLatLng([lat,lng]);
+        map.panTo([lat,lng]);
+        await updateDoc(doc(db, "drivers", currentUser.uid), { lat, lng, lastUpdate: serverTimestamp() });
+      }, err => console.log('Watch error:', err), {enableHighAccuracy:true, maximumAge:0});
+    }
+
+    function stopTracking() { if(watchId) navigator.geolocation.clearWatch(watchId); }
+    window.refreshLocation = () => { if(isOnline) { stopTracking(); startTracking(); } }
+
+    function listenOrderMasuk() {
+      const q = query(collection(db, "orders"), where("status", "==", "mencari"));
+      let orderPertama = true;
+
+      onSnapshot(q, (snapshot) => {
+        if(!isOnline) {
+          orderList.innerHTML = '<div class="empty">Kamu sedang OFFLINE</div>';
+          return;
+        }
+        if(snapshot.empty) {
+          orderList.innerHTML = '<div class="empty">Belum ada order masuk</div>';
+          return;
+        }
+
+        orderList.innerHTML = '';
+        snapshot.forEach((docSnap) => {
+          const order = docSnap.data();
+          orderList.innerHTML += `
+            <div class="card">
+              <h4>Order Baru 🔥</h4>
+              <div class="order-info"><span>📍 Jemput:</span><b>${order.pickupAddr}</b></div>
+              <div class="order-info"><span>🎯 Antar:</span><b>${order.destAddr}</b></div>
+              <div class="order-info"><span>📏 Jarak:</span><b>${order.jarak} km</b></div>
+              <div class="order-info"><span>💰 Ongkos:</span><b style="color:var(--primary)">Rp ${order.harga.toLocaleString('id-ID')}</b></div>
+              <div class="btn-row">
+                <button class="btn btn-danger" onclick="tolakOrder('${docSnap.id}')">TOLAK</button>
+                <button class="btn" onclick="terimaOrder('${docSnap.id}', ${order.pickupLat}, ${order.pickupLng}, ${order.destLat}, ${order.destLng})">TERIMA</button>
+              </div>
+            </div>`;
+        });
+
+        if(snapshot.size > 0 &&!orderPertama) {
+          const notif = document.getElementById('notifSound');
+          notif.loop = true;
+          notif.play().catch(e => console.log('Autoplay diblokir:', e));
+          setTimeout(() => { notif.loop = false; notif.pause(); notif.currentTime = 0; }, 3000);
+
+          if (navigator.vibrate) navigator.vibrate([500, 200, 500]);
+
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('🛵 Order Baru Masuk!', {
+              body: `Jemput: ${snapshot.docs[0].data().pickupAddr}\nOngkos: Rp ${snapshot.docs[0].data().harga.toLocaleString('id-ID')}`,
+              icon: 'https://cdn-icons-png.flaticon.com/512/744465.png',
+              vibrate: [500, 200, 500]
+            });
+          }
+        }
+        orderPertama = false;
+      });
+    }
+
+    window.terimaOrder = async (id, pLat, pLng, dLat, dLng) => {
+      const driverDoc = await getDoc(doc(db, "drivers", currentUser.uid));
+      const saldo = driverDoc.data().saldo || 0;
+      if(saldo < -50000) {
+        return alert('Saldo minus melebihi -Rp 50.000! Top up dulu baru bisa narik bro');
+      }
+
+      await updateDoc(doc(db, "orders", id), { status: "dijemput", driverId: currentUser.uid, driverName: document.getElementById('namaDriver').textContent });
+      currentOrderId = id;
+      if(routingControl) map.removeControl(routingControl);
+      routingControl = L.Routing.control({
+        waypoints: [driverMarker.getLatLng(), L.latLng(pLat, pLng), L.latLng(dLat, dLng)],
+        routeWhileDragging: false, show: false
+      }).addTo(map);
+      orderList.innerHTML = `
+        <div class="card">
+          <h4>Sedang menjalankan order</h4>
+          <button class="btn" onclick="selesaikanOrder()">SELESAIKAN ORDER</button>
+        </div>`;
+      switchPage('Chat');
+      listenChat();
+    }
+
+    window.tolakOrder = async (id) => { console.log('Order ditolak:', id); }
+
+    window.selesaikanOrder = async () => {
+      if(!currentOrderId) return;
+
+      const orderDoc = await getDoc(doc(db, "orders", currentOrderId));
+      const orderData = orderDoc.data();
+      const potongan = Math.round(orderData.harga * 0.1);
+
+      const driverDoc = await getDoc(doc(db, "drivers", currentUser.uid));
+      const saldoLama = driverDoc.data().saldo || 0;
+      const saldoBaru = saldoLama - potongan;
+
+      await updateDoc(doc(db, "orders", currentOrderId), {
+        status: "selesai",
+        selesaiAt: serverTimestamp(),
+        komisi: potongan
+      });
+
+      await updateDoc(doc(db, "drivers", currentUser.uid), {
+        saldo: saldoBaru
+      });
+
+      document.getElementById('saldoDriver').textContent = 'Rp ' + saldoBaru.toLocaleString('id-ID');
+      document.getElementById('saldoTopup').textContent = 'Rp ' + saldoBaru.toLocaleString('id-ID');
+
+      alert(`Order selesai! Komisi Rp ${potongan.toLocaleString('id-ID')} dipotong dari saldo`);
+
+      if(saldoBaru < -50000) {
+        alert('Saldo minus melebihi batas! Akun di-offline-kan. Silakan top up');
+        document.getElementById('onlineToggle').checked = false;
+        toggleOnline();
+      }
+
+      currentOrderId = null;
+      if(routingControl) map.removeControl(routingControl);
+      orderList.innerHTML = '<div class="empty">Belum ada order masuk</div>';
+    }
+
+    function listenRiwayat() {
+      const q = query(collection(db, "orders"), where("driverId", "==", currentUser.uid), where("status", "==", "selesai"));
+      onSnapshot(q, (snapshot) => {
+        if(snapshot.empty) {
+          riwayatList.innerHTML = '<div class="empty">Belum ada riwayat</div>';
+          return;
+        }
+        riwayatList.innerHTML = '';
+        snapshot.forEach((docSnap) => {
+          const order = docSnap.data();
+          const tgl = order.selesaiAt?.toDate().toLocaleString('id-ID') || '-';
+          const komisi = order.komisi? ` - Komisi: Rp ${order.komisi.toLocaleString('id-ID')}` : '';
+          riwayatList.innerHTML += `
+            <div class="card">
+              <div class="order-info"><span>📅 Waktu:</span><b>${tgl}</b></div>
+              <div class="order-info"><span>📍 Jemput:</span><b>${order.pickupAddr}</b></div>
+              <div class="order-info"><span>🎯 Antar:</span><b>${order.destAddr}</b></div>
+              <div class="order-info"><span>💰 Ongkos:</span><b style="color:var(--primary)">Rp ${order.harga.toLocaleString('id-ID')}${komisi}</b></div>
+            </div>`;
+        });
+      });
+    }
+
+    function listenChat() {
+      if(!currentOrderId) return;
+      const q = query(collection(db, "chats"), where("orderId", "==", currentOrderId));
+      onSnapshot(q, (snapshot) => {
+        chatBox.innerHTML = '';
+        snapshot.forEach((docSnap) => {
+          const chat = docSnap.data();
+          const kelas = chat.dari === currentUser.uid? 'chat-me' : 'chat-you';
+          chatBox.innerHTML += `<div class="chat-msg ${kelas}">${chat.pesan}</div>`;
+        });
+        chatBox.scrollTop = chatBox.scrollHeight;
+      });
+    }
+
+    window.kirimChat = async () => {
+      if(!currentOrderId) return alert('Belum ada order aktif');
+      if(!pesanChat.value) return;
+      await addDoc(collection(db, "chats"), {
+        orderId: currentOrderId, dari: currentUser.uid,
+        pesan: pesanChat.value, waktu: serverTimestamp()
+      });
+      pesanChat.value = '';
+    }
+
+    window.requestTopup = async () => {
+      if(!nominalTopup.value || parseInt(nominalTopup.value) < 20000) return alert('Minimal top up Rp 20.000');
+      await addDoc(collection(db, "topup"), {
+        driverId: currentUser.uid, driverName: document.getElementById('namaDriver').textContent,
+        nominal: parseInt(nominalTopup.value),
+        status: "pending", createdAt: serverTimestamp()
+      });
+      alert('Konfirmasi terkirim ke admin.\nAdmin akan cek transferan & isi saldo dalam 1x24 jam');
+      nominalTopup.value = '';
+    }
+
+    function listenRiwayatTopup() {
+      const q = query(collection(db, "topup"), where("driverId", "==", currentUser.uid));
+      onSnapshot(q, (snapshot) => {
+        if(snapshot.empty) {
+          riwayatTopup.innerHTML = '<div class="empty">Belum ada request</div>';
+          return;
+        }
+        riwayatTopup.innerHTML = '';
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const tgl = data.createdAt?.toDate().toLocaleString('id-ID') || '-';
+          const status = data.status === 'success' ? '✅ Berhasil' : data.status === 'rejected' ? '❌ Ditolak' : '⏳ Pending';
+          riwayatTopup.innerHTML += `
+            <div class="card">
+              <div class="order-info"><span>📅 ${tgl}</span><b>${status}</b></div>
+              <div class="order-info"><span>💰 Nominal:</span><b>Rp ${data.nominal.toLocaleString('id-ID')}</b></div>
+              ${data.alasan ? `<small style="color:var(--danger)">Alasan: ${data.alasan}</small>` : ''}
+            </div>`;
+        });
+      });
+    }
+
+    window.kirimAduan = async () => {
+      if(!isiAduan.value) return alert('Isi aduan dulu');
+      await addDoc(collection(db, "aduan"), {
+        driverId: currentUser.uid,
+        driverName: document.getElementById('namaDriver').textContent,
+        isi: isiAduan.value,
+        status: "baru",
+        createdAt: serverTimestamp()
+      });
+      alert('Pengaduan terkirim ke CS');
+      isiAduan.value = '';
+    }
+
+    function listenRiwayatAduan() {
+      const q = query(collection(db, "aduan"), where("driverId", "==", currentUser.uid));
+      onSnapshot(q, (snapshot) => {
+        if(snapshot.empty) {
+          riwayatAduan.innerHTML = '<div class="empty">Belum ada pengaduan</div>';
+          return;
+        }
+        riwayatAduan.innerHTML = '';
+        snapshot.forEach((docSnap) => {
+          const a = docSnap.data();
+          const tgl = a.createdAt?.toDate().toLocaleString('id-ID') || '-';
+          let statusClass = 'status-baru';
+          let statusText = 'Baru';
+          if(a.status === 'diproses') { statusClass = 'status-diproses'; statusText = 'Diproses'; }
+          if(a.status === 'selesai') { statusClass = 'status-selesai'; statusText = 'Selesai'; }
+          if(a.status === 'ditolak') { statusClass = 'status-baru'; statusText = 'Ditolak'; }
+
+          riwayatAduan.innerHTML += `
+            <div class="card">
+              <div class="order-info"><span>📅 ${tgl}</span><span class="status-badge ${statusClass}">${statusText}</span></div>
+              <p style="margin:8px 0;padding:8px;background:#f5f5f5;border-radius:6px">${a.isi}</p>
+              ${a.balasanAdmin? `<div style="margin-top:8px;padding:8px;background:#e8f5e9;border-radius:6px"><b>Balasan CS:</b><br>${a.balasanAdmin}</div>` : ''}
+              ${a.alasan? `<small style="color:var(--danger)">Alasan ditolak: ${a.alasan}</small>` : ''}
+            </div>`;
+        });
+      });
+    }
+
+    window.updateProfil = async () => {
+      await updateDoc(doc(db, "drivers", currentUser.uid), { nama: editNama.value });
+      document.getElementById('namaDriver').textContent = editNama.value;
+      alert('Profil berhasil diupdate');
+    }
+
+    window.toggleTheme = () => {
+      const body = document.body;
+      const newTheme = body.dataset.theme === 'light'? 'dark' : 'light';
+      body.dataset.theme = newTheme;
+      document.querySelectorAll('.theme-toggle').forEach(el => el.textContent = newTheme === 'light'? '🌙' : '☀️');
+    }
+
+    window.showAuth = (id) => {
+      document.querySelectorAll('.auth-page').forEach(el => el.classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    window.showMainApp = () => {
+      document.querySelectorAll('.auth-page').forEach(el => el.classList.add('hidden'));
+      document.getElementById('mainApp').classList.remove('hidden');
+      switchPage('Home');
+    }
+
+    window.switchPage = (page, el) => {
+      document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+      document.getElementById('page'+page).classList.remove('hidden');
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      
+      const navEl = el || event?.target?.closest('.nav-item') || document.querySelector(`.nav-item[onclick*="${page}"]`);
+      if(navEl) navEl.classList.add('active');
+
+      // Ganti icon aktif jadi ijo, non-aktif jadi abu
+      document.getElementById('iconHome').src = icons.home.off;
+      document.getElementById('iconRiwayat').src = icons.riwayat.off;
+      document.getElementById('iconChat').src = icons.chat.off;
+      document.getElementById('iconTopup').src = icons.topup.off;
+      document.getElementById('iconProfil').src = icons.profil.off;
+
+      if(page === 'Home') document.getElementById('iconHome').src = icons.home.on;
+      if(page === 'Riwayat') document.getElementById('iconRiwayat').src = icons.riwayat.on;
+      if(page === 'Chat') document.getElementById('iconChat').src = icons.chat.on;
+      if(page === 'Topup') document.getElementById('iconTopup').src = icons.topup.on;
+      if(page === 'Profil') document.getElementById('iconProfil').src = icons.profil.on;
+
+      if(page === 'Home') {
+        if(!map) initMap();
+        else setTimeout(() => map.invalidateSize(), 300);
+      }
+      if(page === 'Chat' && currentOrderId) listenChat();
+    }
+
+    window.logout = () => {
+      if(confirm('Yakin mau logout?')) signOut(auth);
+    }
+
+    if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+  </script>
+</body>
+</html>

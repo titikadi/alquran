@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Sekolah Lengkap</title>
+<style>
+:root{
+  --bg:#f4f6f9;
+  --card:#ffffff;
+  --text:#333;
+  --border:#ddd;
+  --tab:#ddd;
+  --th:#f8f9fc;
+}
+.dark{
+  --bg:#1a1a2e;
+  --card:#16213e;
+  --text:#e0e0e0;
+  --border:#2e2e4e;
+  --tab:#2e2e4e;
+  --th:#0f3460;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+body{background:var(--bg);padding:10px;color:var(--text);transition:0.3s}
+h2,h3{margin-bottom:10px;color:var(--text)}
+.tabs{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto}
+.tab{padding:10px 14px;background:var(--tab);border:none;border-radius:8px;white-space:nowrap;cursor:pointer;font-weight:bold;color:var(--text)}
+.tab.active{background:#4e73df;color:white}
+.card{background:var(--card);padding:12px;border-radius:10px;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,0.08)}
+input,select,textarea{width:100%;padding:9px;margin:5px 0;border:1px solid var(--border);border-radius:6px;font-size:14px;background:var(--card);color:var(--text)}
+button{padding:9px 14px;border:none;border-radius:6px;background:#4e73df;color:white;font-weight:bold;cursor:pointer;margin:4px 4px 4px 0}
+button.delete{background:#e74a3b}
+button.edit{background:#f6c23e}
+button.success{background:#1cc88a}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left}
+th{background:var(--th)}
+.hidden{display:none}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.small{font-size:12px;color:#666}
+.no-col{width:35px;text-align:center}
+.header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.theme-btn{padding:8px 12px;border-radius:50%;background:var(--tab);border:none;cursor:pointer;font-size:18px}
+</style>
+</head>
+<body>
+
+<div class="header-top">
+  <h2>📚 Data Sekolah</h2>
+  <button class="theme-btn" onclick="toggleTheme()">🌙</button>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('siswa')">Siswa</button>
+  <button class="tab" onclick="showTab('guru')">Guru</button>
+  <button class="tab" onclick="showTab('jadwal')">Jadwal Mapel</button>
+  <button class="tab" onclick="showTab('arisan')">Arisan Guru</button>
+  <button class="tab" onclick="showTab('raport')">Raport</button>
+</div>
+
+<!-- SISWA -->
+<div id="siswa" class="tab-content">
+  <div class="card">
+    <h3>Absensi Siswa/Siswi</h3>
+    <input type="hidden" id="siswa-id">
+    <div class="grid-2">
+      <input type="text" id="siswa-nama" placeholder="Nama Siswa/Siswi">
+      <input type="text" id="siswa-kelas" placeholder="Kelas">
+    </div>
+    <div class="grid-2">
+      <input type="date" id="siswa-tgl">
+      <input type="time" id="siswa-jam">
+    </div>
+    <div class="grid-2">
+      <select id="siswa-hari">
+        <option value="">Pilih Hari</option>
+        <option>Senin</option><option>Selasa</option><option>Rabu</option>
+        <option>Kamis</option><option>Jumat</option><option>Sabtu</option>
+      </select>
+      <select id="siswa-ket">
+        <option value="">Keterangan</option>
+        <option>Izin</option><option>Sakit</option><option>Alpa</option>
+      </select>
+    </div>
+    <button onclick="saveSiswa()">Simpan</button>
+    <button onclick="resetSiswa()" style="background:#858796">Reset</button>
+    <p class="small">Maks 70 siswa</p>
+  </div>
+
+  <div class="card">
+    <input type="text" id="search-siswa" placeholder="Cari nama/kelas..." onkeyup="renderSiswa()">
+    <table>
+      <thead><tr><th class="no-col">No</th><th>Nama</th><th>Kelas</th><th>Tgl</th><th>Ket</th><th>Aksi</th></tr></thead>
+      <tbody id="list-siswa"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- GURU -->
+<div id="guru" class="tab-content hidden">
+  <div class="card">
+    <h3>Data Guru</h3>
+    <input type="hidden" id="guru-id">
+    <div class="grid-2">
+      <input type="text" id="guru-nama" placeholder="Nama Guru">
+      <input type="text" id="guru-nip" placeholder="NIP">
+    </div>
+    <div class="grid-2">
+      <input type="text" id="guru-wali" placeholder="Wali Kelas">
+      <select id="guru-ket">
+        <option value="">Alasan Tidak Masuk</option>
+        <option>Sakit</option><option>Izin</option><option>Alpa</option>
+      </select>
+    </div>
+    <button onclick="saveGuru()">Simpan</button>
+    <button onclick="resetGuru()" style="background:#858796">Reset</button>
+    <p class="small">Maks 100 guru</p>
+  </div>
+
+  <div class="card">
+    <input type="text" id="search-guru" placeholder="Cari nama/NIP..." onkeyup="renderGuru()">
+    <table>
+      <thead><tr><th class="no-col">No</th><th>Nama</th><th>NIP</th><th>Wali Kelas</th><th>Ket</th><th>Aksi</th></tr></thead>
+      <tbody id="list-guru"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- JADWAL -->
+<div id="jadwal" class="tab-content hidden">
+  <div class="card">
+    <h3>Jadwal Mapel Senin-Sabtu</h3>
+    <input type="hidden" id="jadwal-id">
+    <div class="grid-2">
+      <select id="jadwal-hari">
+        <option>Senin</option><option>Selasa</option><option>Rabu</option>
+        <option>Kamis</option><option>Jumat</option><option>Sabtu</option>
+      </select>
+      <input type="text" id="jadwal-jam" placeholder="Jam: 07.00-08.30">
+    </div>
+    <input type="text" id="jadwal-mapel" placeholder="Mata Pelajaran">
+    <input type="text" id="jadwal-guru" placeholder="Nama Guru Pengajar">
+    <button onclick="saveJadwal()">Simpan</button>
+    <button onclick="resetJadwal()" style="background:#858796">Reset</button>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead><tr><th>Hari</th><th>Jam</th><th>Mapel</th><th>Guru</th><th>Aksi</th></tr></thead>
+      <tbody id="list-jadwal"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ARISAN -->
+<div id="arisan" class="tab-content hidden">
+  <div class="card">
+    <h3>Arisan Guru</h3>
+    <input type="hidden" id="arisan-id">
+    <input type="text" id="arisan-nama" placeholder="Nama Guru">
+    <input type="number" id="arisan-jumlah" placeholder="Jumlah Bayar">
+    <input type="date" id="arisan-tgl" placeholder="Tanggal">
+    <div class="grid-2">
+      <select id="arisan-hari">
+        <option>Senin</option><option>Selasa</option><option>Rabu</option>
+        <option>Kamis</option><option>Jumat</option><option>Sabtu</option><option>Minggu</option>
+      </select>
+      <input type="time" id="arisan-jam">
+    </div>
+    <button onclick="saveArisan()">Simpan</button>
+    <button onclick="resetArisan()" style="background:#858796">Reset</button>
+    <p class="small">Maks 100 data</p>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead><tr><th class="no-col">No</th><th>Nama</th><th>Jumlah</th><th>Tanggal</th><th>Hari/Jam</th><th>Aksi</th></tr></thead>
+      <tbody id="list-arisan"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- RAPORT -->
+<div id="raport" class="tab-content hidden">
+  <div class="card">
+    <h3>Hitung Nilai Raport</h3>
+    <div class="grid-2">
+      <input type="text" id="raport-nama" placeholder="Nama Siswa">
+      <input type="text" id="raport-kelas" placeholder="Kelas">
+    </div>
+
+    <div id="mapel-list">
+      <div class="grid-2 mapel-row">
+        <input type="text" placeholder="Nama Mapel" class="mapel-nama">
+        <input type="number" placeholder="Nilai" min="0" max="100" class="mapel-nilai">
+      </div>
+    </div>
+
+    <button onclick="tambahMapel()">+ Tambah Mapel</button>
+    <button onclick="hitungRaport()">Simpan & Hitung Rata-rata</button>
+    <h3 id="hasil-raport" style="margin-top:10px;color:#4e73df"></h3>
+  </div>
+
+  <div class="card">
+    <h3>Data Raport Tersimpan</h3>
+    <button class="success" onclick="exportExcel()">📊 Export Excel</button>
+    <table>
+      <thead><tr><th>Nama</th><th>Kelas</th><th>Jml Mapel</th><th>Rata-rata</th><th>Aksi</th></tr></thead>
+      <tbody id="list-raport"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+let data = JSON.parse(localStorage.getItem('dataSekolahV4')||'{"siswa":[],"guru":[],"jadwal":[],"arisan":[],"raport":[]}');
+
+// Tema malam
+function toggleTheme(){
+  document.body.classList.toggle('dark');
+  localStorage.setItem('theme',document.body.classList.contains('dark')?'dark':'light');
+}
+if(localStorage.getItem('theme')==='dark'){
+  document.body.classList.add('dark');
+}
+
+function saveData(){
+  localStorage.setItem('dataSekolahV4', JSON.stringify(data));
+}
+
+function showTab(tab){
+  document.querySelectorAll('.tab-content').forEach(el=>el.classList.add('hidden'));
+  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById(tab).classList.remove('hidden');
+  event.target.classList.add('active');
+}
+
+// SISWA
+function saveSiswa(){
+  if(data.siswa.length>=70 &&!document.getElementById('siswa-id').value){
+    alert('Maks 70 siswa');return;
+  }
+  let id = document.getElementById('siswa-id').value;
+  let item = {
+    id: id || Date.now(),
+    nama: document.getElementById('siswa-nama').value,
+    kelas: document.getElementById('siswa-kelas').value,
+    tgl: document.getElementById('siswa-tgl').value,
+    jam: document.getElementById('siswa-jam').value,
+    hari: document.getElementById('siswa-hari').value,
+    ket: document.getElementById('siswa-ket').value
+  };
+  if(!item.nama||!item.ket){alert('Nama & keterangan wajib');return;}
+  if(id){
+    let i = data.siswa.findIndex(x=>x.id==id);
+    data.siswa[i]=item;
+  }else{
+    data.siswa.push(item);
+  }
+  saveData(); resetSiswa(); renderSiswa();
+}
+
+function resetSiswa(){
+  document.getElementById('siswa-id').value='';
+  document.getElementById('siswa-nama').value='';
+  document.getElementById('siswa-kelas').value='';
+  document.getElementById('siswa-tgl').value='';
+  document.getElementById('siswa-jam').value='';
+  document.getElementById('siswa-hari').value='';
+  document.getElementById('siswa-ket').value='';
+}
+
+function renderSiswa(){
+  let q = document.getElementById('search-siswa').value.toLowerCase();
+  let filtered = data.siswa.filter(x=>x.nama.toLowerCase().includes(q)||x.kelas.toLowerCase().includes(q));
+  let html = filtered.map((x,i)=>`<tr>
+      <td class="no-col">${i+1}.</td>
+      <td>${x.nama}</td><td>${x.kelas}</td><td>${x.tgl} ${x.jam}</td><td>${x.ket}</td>
+      <td>
+        <button class="edit" onclick='editSiswa(${JSON.stringify(x)})'>Edit</button>
+        <button class="delete" onclick='delSiswa(${x.id})'>Hapus</button>
+      </td>
+    </tr>`).join('');
+  document.getElementById('list-siswa').innerHTML=html;
+}
+
+function editSiswa(x){
+  document.getElementById('siswa-id').value=x.id;
+  document.getElementById('siswa-nama').value=x.nama;
+  document.getElementById('siswa-kelas').value=x.kelas;
+  document.getElementById('siswa-tgl').value=x.tgl;
+  document.getElementById('siswa-jam').value=x.jam;
+  document.getElementById('siswa-hari').value=x.hari;
+  document.getElementById('siswa-ket').value=x.ket;
+}
+
+function delSiswa(id){
+  if(confirm('Hapus?')){
+    data.siswa=data.siswa.filter(x=>x.id!=id);
+    saveData(); renderSiswa();
+  }
+}
+
+// GURU
+function saveGuru(){
+  if(data.guru.length>=100 &&!document.getElementById('guru-id').value){
+    alert('Maks 100 guru');return;
+  }
+  let id = document.getElementById('guru-id').value;
+  let item = {
+    id: id || Date.now(),
+    nama: document.getElementById('guru-nama').value,
+    nip: document.getElementById('guru-nip').value,
+    wali: document.getElementById('guru-wali').value,
+    ket: document.getElementById('guru-ket').value
+  };
+  if(!item.nama){alert('Nama wajib');return;}
+  if(id){
+    let i = data.guru.findIndex(x=>x.id==id);
+    data.guru[i]=item;
+  }else{
+    data.guru.push(item);
+  }
+  saveData(); resetGuru(); renderGuru();
+}
+
+function resetGuru(){
+  document.getElementById('guru-id').value='';
+  document.getElementById('guru-nama').value='';
+  document.getElementById('guru-nip').value='';
+  document.getElementById('guru-wali').value='';
+  document.getElementById('guru-ket').value='';
+}
+
+function renderGuru(){
+  let q = document.getElementById('search-guru').value.toLowerCase();
+  let filtered = data.guru.filter(x=>x.nama.toLowerCase().includes(q)||x.nip.includes(q));
+  let html = filtered.map((x,i)=>`<tr>
+      <td class="no-col">${i+1}.</td>
+      <td>${x.nama}</td><td>${x.nip}</td><td>${x.wali}</td><td>${x.ket}</td>
+      <td>
+        <button class="edit" onclick='editGuru(${JSON.stringify(x)})'>Edit</button>
+        <button class="delete" onclick='delGuru(${x.id})'>Hapus</button>
+      </td>
+    </tr>`).join('');
+  document.getElementById('list-guru').innerHTML=html;
+}
+
+function editGuru(x){
+  document.getElementById('guru-id').value=x.id;
+  document.getElementById('guru-nama').value=x.nama;
+  document.getElementById('guru-nip').value=x.nip;
+  document.getElementById('guru-wali').value=x.wali;
+  document.getElementById('guru-ket').value=x.ket;
+}
+
+function delGuru(id){
+  if(confirm('Hapus?')){
+    data.guru=data.guru.filter(x=>x.id!=id);
+    saveData(); renderGuru();
+  }
+}
+
+// JADWAL
+function saveJadwal(){
+  let id = document.getElementById('jadwal-id').value;
+  let item = {
+    id: id || Date.now(),
+    hari: document.getElementById('jadwal-hari').value,
+    jam: document.getElementById('jadwal-jam').value,
+    mapel: document.getElementById('jadwal-mapel').value,
+    guru: document.getElementById('jadwal-guru').value
+  };
+  if(!item.mapel||!item.guru){alert('Mapel & guru wajib');return;}
+  if(id){
+    let i = data.jadwal.findIndex(x=>x.id==id);
+    data.jadwal[i]=item;
+  }else{
+    data.jadwal.push(item);
+  }
+  saveData(); resetJadwal(); renderJadwal();
+}
+
+function resetJadwal(){
+  document.getElementById('jadwal-id').value='';
+  document.getElementById('jadwal-jam').value='';
+  document.getElementById('jadwal-mapel').value='';
+  document.getElementById('jadwal-guru').value='';
+}
+
+function renderJadwal(){
+  let html = data.jadwal.map(x=>`<tr>
+    <td>${x.hari}</td><td>${x.jam}</td><td>${x.mapel}</td><td>${x.guru}</td>
+    <td>
+      <button class="edit" onclick='editJadwal(${JSON.stringify(x)})'>Edit</button>
+      <button class="delete" onclick='delJadwal(${x.id})'>Hapus</button>
+    </td>
+  </tr>`).join('');
+  document.getElementById('list-jadwal').innerHTML=html;
+}
+
+function editJadwal(x){
+  document.getElementById('jadwal-id').value=x.id;
+  document.getElementById('jadwal-hari').value=x.hari;
+  document.getElementById('jadwal-jam').value=x.jam;
+  document.getElementById('jadwal-mapel').value=x.mapel;
+  document.getElementById('jadwal-guru').value=x.guru;
+}
+
+function delJadwal(id){
+  if(confirm('Hapus?')){
+    data.jadwal=data.jadwal.filter(x=>x.id!=id);
+    saveData(); renderJadwal();
+  }
+}
+
+// ARISAN
+function saveArisan(){
+  if(data.arisan.length>=100 &&!document.getElementById('arisan-id').value){
+    alert('Maks 100 data');return;
+  }
+  let id = document.getElementById('arisan-id').value;
+  let item = {
+    id: id || Date.now(),
+    nama: document.getElementById('arisan-nama').value,
+    jumlah: document.getElementById('arisan-jumlah').value,
+    tgl: document.getElementById('arisan-tgl').value,
+    hari: document.getElementById('arisan-hari').value,
+    jam: document.getElementById('arisan-jam').value
+  };
+  if(!item.nama||!item.jumlah){alert('Nama & jumlah wajib');return;}
+  if(id){
+    let i = data.arisan.findIndex(x=>x.id==id);
+    data.arisan[i]=item;
+  }else{
+    data.arisan.push(item);
+  }
+  saveData(); resetArisan(); renderArisan();
+}
+
+function resetArisan(){
+  document.getElementById('arisan-id').value='';
+  document.getElementById('arisan-nama').value='';
+  document.getElementById('arisan-jumlah').value='';
+  document.getElementById('arisan-tgl').value='';
+  document.getElementById('arisan-jam').value='';
+}
+
+function renderArisan(){
+  let html = data.arisan.map((x,i)=>`<tr>
+    <td class="no-col">${i+1}.</td>
+    <td>${x.nama}</td><td>Rp ${x.jumlah}</td><td>${x.tgl}</td><td>${x.hari} ${x.jam}</td>
+    <td>
+      <button class="edit" onclick='editArisan(${JSON.stringify(x)})'>Edit</button>
+      <button class="delete" onclick='delArisan(${x.id})'>Hapus</button>
+    </td>
+  </tr>`).join('');
+  document.getElementById('list-arisan').innerHTML=html;
+}
+
+function editArisan(x){
+  document.getElementById('arisan-id').value=x.id;
+  document.getElementById('arisan-nama').value=x.nama;
+  document.getElementById('arisan-jumlah').value=x.jumlah;
+  document.getElementById('arisan-tgl').value=x.tgl;
+  document.getElementById('arisan-hari').value=x.hari;
+  document.getElementById('arisan-jam').value=x.jam;
+}
+
+function delArisan(id){
+  if(confirm('Hapus?')){
+    data.arisan=data.arisan.filter(x=>x.id!=id);
+    saveData(); renderArisan();
+  }
+}
+
+// RAPORT DINAMIS
+function tambahMapel(){
+  let div = document.createElement('div');
+  div.className = 'grid-2 mapel-row';
+  div.innerHTML = `
+    <input type="text" placeholder="Nama Mapel" class="mapel-nama">
+    <input type="number" placeholder="Nilai" min="0" max="100" class="mapel-nilai">
+  `;
+  document.getElementById('mapel-list').appendChild(div);
+}
+
+function hitungRaport(){
+  let nama = document.getElementById('raport-nama').value;
+  let kelas = document.getElementById('raport-kelas').value;
+
+  let namaMapel = document.querySelectorAll('.mapel-nama');
+  let nilaiMapel = document.querySelectorAll('.mapel-nilai');
+
+  let total = 0;
+  let jml = 0;
+  let detailNilai = [];
+
+  for(let i=0; i<namaMapel.length; i++){
+    let n = parseFloat(nilaiMapel[i].value);
+    if(namaMapel[i].value &&!isNaN(n)){
+      total += n;
+      jml++;
+      detailNilai.push(`${namaMapel[i].value}:${n}`);
+    }
+  }
+
+  if(!nama || jml==0){alert('Isi nama & minimal 1 mapel');return;}
+
+  let rata = (total / jml).toFixed(2);
+
+  let item = {
+    id: Date.now(),
+    nama, kelas,
+    jmlMapel: jml,
+    nilai: detailNilai.join(' | '),
+    rata
+  };
+  data.raport.push(item);
+  saveData(); renderRaport();
+  document.getElementById('hasil-raport').innerText=`${nama} Kelas ${kelas} - Rata-rata: ${rata} dari ${jml} mapel`;
+
+  document.getElementById('raport-nama').value='';
+  document.getElementById('raport-kelas').value='';
+  document.getElementById('mapel-list').innerHTML = `
+    <div class="grid-2 mapel-row">
+      <input type="text" placeholder="Nama Mapel" class="mapel-nama">
+      <input type="number" placeholder="Nilai" min="0" max="100" class="mapel-nilai">
+    </div>
+  `;
+}
+
+function renderRaport(){
+  let html = data.raport.map(x=>`<tr>
+    <td>${x.nama}</td>
+    <td>${x.kelas}</td>
+    <td>${x.jmlMapel}</td>
+    <td><b>${x.rata}</b></td>
+    <td><button class="delete" onclick='delRaport(${x.id})'>Hapus</button></td>
+  </tr>`).join('');
+  document.getElementById('list-raport').innerHTML=html;
+}
+
+function delRaport(id){
+  if(confirm('Hapus?')){
+    data.raport=data.raport.filter(x=>x.id!=id);
+    saveData(); renderRaport();
+  }
+}
+
+// EXPORT EXCEL
+function exportExcel(){
+  if(data.raport.length===0){alert('Belum ada data raport');return;}
+
+  let csv = 'Nama,Kelas,Jumlah Mapel,Rata-rata,Detail Nilai\n';
+  data.raport.forEach(x=>{
+    csv += `"${x.nama}","${x.kelas}",${x.jmlMapel},${x.rata},"${x.nilai}"\n`;
+  });
+
+  let blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  let link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'data_raport_sekolah.csv';
+  link.click();
+}
+
+renderSiswa();renderGuru();renderJadwal();renderArisan();renderRaport();
+</script>
+</body>
+</html>

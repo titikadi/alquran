@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Buku Keuangan+</title>
+<style>
+:root{
+  --p:#4CAF50;--bg:#f5f5f5;--card:#fff;--text:#1a1a1a;--border:#e0e0e0;--text2:#666;--gold:#FFD700;--red:#E53935;--blue:#2196F3;
+}
+[data-theme="dark"]{--bg:#121212;--card:#1e1e1e;--text:#fff;--border:#333;--text2:#aaa}
+[data-theme="ocean"]{--p:#00BCD4;--bg:#e0f7fa;--card:#fff;--text:#004d40;--border:#b2ebf2}
+[data-theme="sunset"]{--p:#FF5722;--bg:#fff3e0;--card:#fff;--text:#3e2723;--border:#ffccbc}
+[data-theme="purple"]{--p:#9C27B0;--bg:#f3e5f5;--card:#fff;--text:#4a148c;--border:#e1bee7}
+[data-theme="gold"]{--p:#FFD700;--bg:#1a1400;--card:#2d2300;--text:#fff8e1;--border:#4d3d00}
+[data-theme="mint"]{--p:#26A69A;--bg:#e0f2f1;--card:#fff;--text:#004d40;--border:#b2dfdb}
+[data-theme="coral"]{--p:#FF7043;--bg:#fbe9e7;--card:#fff;--text:#bf360c;--border:#ffccbc}
+[data-theme="navy"]{--p:#1A237E;--bg:#e8eaf6;--card:#fff;--text:#0d1b3d;--border:#c5cae9}
+[data-theme="rose"]{--p:#AD1457;--bg:#fce4ec;--card:#fff;--text:#880e4f;--border:#f8bbd0}
+[data-theme="forest"]{--p:#33691E;--bg:#f1f8e9;--card:#fff;--text:#1b5e20;--border:#dcedc8}
+
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+body{background:var(--bg);color:var(--text);overscroll-behavior-y:contain}
+.hide{display:none!important}
+.header{background:var(--card);padding:15px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:99}
+.logo{font-size:20px;font-weight:900;color:var(--p)}
+.coin-badge{background:var(--gold);color:#000;padding:5px 12px;border-radius:20px;font-weight:700;cursor:pointer}
+.container{max-width:600px;margin:0 auto;padding:15px;padding-bottom:80px}
+.pull-refresh{height:50px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:14px}
+.card{background:var(--card);padding:15px;border-radius:12px;margin-bottom:12px;border:1px solid var(--border)}
+.btn{width:100%;padding:12px;background:var(--p);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;margin:5px 0}
+.btn-sec{background:var(--bg);border:1px solid var(--border);color:var(--text)}
+.btn-gold{background:var(--gold);color:#000}
+.btn-red{background:var(--red)}
+.btn-blue{background:var(--blue)}
+.btn:disabled{opacity:0.6;cursor:not-allowed}
+input,select,textarea{width:100%;padding:10px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);margin:5px 0}
+.password-box{position:relative}
+.password-box input{padding-right:90px}
+.toggle-pass{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--p);cursor:pointer;font-size:12px;font-weight:700}
+.balance-card{background:linear-gradient(135deg,var(--p),#66BB6A);color:#fff;padding:20px;border-radius:12px;text-align:center;margin-bottom:15px}
+.balance-card h2{font-size:32px;margin:10px 0}
+.balance-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.balance-item{background:var(--card);padding:15px;border-radius:10px;text-align:center}
+.balance-item h3{font-size:24px;color:var(--p)}
+.balance-item.red h3{color:var(--red)}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:10px 0}
+.nav-item{text-align:center;color:var(--text2);cursor:pointer;font-size:12px}
+.nav-item.active{color:var(--p)}
+.nav-item svg{width:24px;height:24px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px}
+.modal.show{display:flex}
+.modal-box{background:var(--card);width:100%;max-width:500px;border-radius:16px;padding:20px;max-height:90vh;overflow-y:auto}
+.theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:15px 0}
+.theme-item{aspect-ratio:1;border-radius:10px;border:2px solid var(--border);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.theme-item.lock::after{content:'🔒';position:absolute;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;font-size:30px;border-radius:10px}
+.transaction-item{display:flex;justify-content:space-between;padding:12px;border-bottom:1px solid var(--border)}
+.transaction-item.income{color:var(--p)}
+.transaction-item.expense{color:var(--red)}
+.calculator{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.calc-btn{padding:20px;background:var(--card);border:1px solid var(--border);border-radius:10px;font-size:20px;cursor:pointer}
+.calc-btn.op{background:var(--p);color:#fff}
+.calc-display{background:var(--card);padding:20px;text-align:right;font-size:28px;border-radius:10px;margin-bottom:10px}
+.chat-box{height:300px;overflow-y:auto;border:1px solid var(--border);padding:10px;border-radius:8px;margin-bottom:10px}
+.chat-msg{background:var(--bg);padding:8px 12px;border-radius:8px;margin:5px 0;max-width:80%}
+.chat-msg.admin{background:var(--p);color:#fff;margin-left:auto}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:12px 20px;border-radius:8px;z-index:10000}
+.lock-overlay{text-align:center;padding:40px;color:var(--text2)}
+.lock-overlay h3{color:var(--p);margin-bottom:10px}
+.arisan-item{background:var(--bg);padding:10px;border-radius:8px;margin:5px 0}
+.pass-rule{font-size:12px;color:var(--text2);margin-top:5px}
+.pass-rule.ok{color:var(--p)}
+.info-box{background:#e3f2fd;border-left:4px solid var(--blue);padding:12px;border-radius:4px;margin:10px 0;font-size:14px}
+</style>
+</head>
+<body data-theme="light">
+
+<!-- AUTH PAGE -->
+<div id="authPage" class="modal show">
+  <div class="modal-box">
+    <h2 style="text-align:center;color:var(--p);margin-bottom:20px">Buku Keuangan+</h2>
+
+    <div id="loginForm">
+      <input type="email" id="loginEmail" placeholder="Email">
+      <div class="password-box">
+        <input type="password" id="loginPass" placeholder="Password">
+        <button type="button" class="toggle-pass" onclick="togglePass('loginPass',this)">Tampilkan</button>
+      </div>
+      <button class="btn" id="loginBtn" onclick="login()">MASUK</button>
+      <button class="btn btn-sec" onclick="showRegister()">DAFTAR</button>
+      <p style="text-align:center;margin-top:10px;color:var(--blue);cursor:pointer" onclick="resetPassword()">Lupa Password?</p>
+    </div>
+
+    <div id="registerForm" class="hide">
+      <input type="text" id="regName" placeholder="Nama Lengkap">
+      <input type="email" id="regEmail" placeholder="Email">
+      <div class="password-box">
+        <input type="password" id="regPass" placeholder="Password" oninput="checkPassRule()">
+        <button type="button" class="toggle-pass" onclick="togglePass('regPass',this)">Tampilkan</button>
+      </div>
+      <div class="pass-rule" id="ruleLen">• Minimal 8 karakter</div>
+      <div class="pass-rule" id="ruleUpper">• Ada huruf besar A-Z</div>
+      <div class="pass-rule" id="ruleLower">• Ada huruf kecil a-z</div>
+      <div class="pass-rule" id="ruleSpecial">• Ada karakter khusus!@#$%</div>
+      <button class="btn" id="regBtn" onclick="register()" disabled>DAFTAR</button>
+      <button class="btn btn-sec" onclick="showLogin()">Kembali ke Login</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" class="hide">
+  <div class="header">
+    <div class="logo">💰 Keuangan+</div>
+    <div class="coin-badge" onclick="openCoinShop()">
+      🪙 <span id="userCoins">0</span>
+    </div>
+  </div>
+
+  <!-- HOME PAGE -->
+  <div class="container" id="pageHome" ontouchstart="touchStart(event)" ontouchmove="touchMove(event)" ontouchend="touchEnd()">
+    <div class="pull-refresh" id="pullRefresh">↓ Tarik untuk refresh</div>
+    
+    <div class="balance-card">
+      <p>Saldo Tabungan</p>
+      <h2 id="totalBalance">Rp 0</h2>
+    </div>
+    <div class="balance-grid">
+      <div class="balance-item">
+        <p>Pemasukan</p>
+        <h3 id="totalIncome">Rp 0</h3>
+      </div>
+      <div class="balance-item red">
+        <p>Pengeluaran</p>
+        <h3 id="totalExpense">Rp 0</h3>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Transaksi Hari Ini</h3>
+      <div id="todayTransactions"></div>
+    </div>
+  </div>
+
+  <!-- TRANSACTION PAGE -->
+  <div class="container hide" id="pageTransaksi">
+    <div class="card">
+      <h3>Tambah Pemasukan</h3>
+      <input type="number" id="incomeAmount" placeholder="Jumlah Rp">
+      <input type="text" id="incomeNote" placeholder="Keterangan">
+      <button class="btn" onclick="addTransaction('income')">SIMPAN PEMASUKAN</button>
+    </div>
+
+    <div class="card">
+      <h3>Tambah Pengeluaran</h3>
+      <input type="number" id="expenseAmount" placeholder="Jumlah Rp">
+      <input type="text" id="expenseNote" placeholder="Keterangan">
+      <button class="btn btn-red" onclick="addTransaction('expense')">SIMPAN PENGELUARAN</button>
+    </div>
+
+    <div class="card">
+      <h3>Riwayat Transaksi</h3>
+      <div id="allTransactions"></div>
+    </div>
+  </div>
+
+  <!-- TABUNGAN PAGE - PREMIUM -->
+  <div class="container hide" id="pageTabungan">
+    <div id="tabunganLock" class="lock-overlay hide">
+      <h3>🔒 Fitur Premium</h3>
+      <p>Buka fitur Tabungan + Kalkulator dengan 3000 koin</p>
+      <button class="btn" onclick="unlockFeature('tabungan')">BUKA DENGAN 3000 KOiN</button>
+    </div>
+    <div id="tabunganContent" class="hide">
+      <div class="card">
+        <h3>Detail Tabungan</h3>
+        <p style="font-size:24px;color:var(--p);margin:10px 0" id="tabunganAmount">Rp 0</p>
+        <button class="btn btn-sec" onclick="withdrawTabungan()">TARIK SALDO</button>
+      </div>
+      
+      <div class="card">
+        <h3>Kalkulator Tabungan</h3>
+        <div class="calc-display" id="calcDisplay">0</div>
+        <div class="calculator">
+          <button class="calc-btn" onclick="calcInput('7')">7</button>
+          <button class="calc-btn" onclick="calcInput('8')">8</button>
+          <button class="calc-btn" onclick="calcInput('9')">9</button>
+          <button class="calc-btn op" onclick="calcInput('/')">/</button>
+          <button class="calc-btn" onclick="calcInput('4')">4</button>
+          <button class="calc-btn" onclick="calcInput('5')">5</button>
+          <button class="calc-btn" onclick="calcInput('6')">6</button>
+          <button class="calc-btn op" onclick="calcInput('*')">×</button>
+          <button class="calc-btn" onclick="calcInput('1')">1</button>
+          <button class="calc-btn" onclick="calcInput('2')">2</button>
+          <button class="calc-btn" onclick="calcInput('3')">3</button>
+          <button class="calc-btn op" onclick="calcInput('-')">-</button>
+          <button class="calc-btn" onclick="calcInput('0')">0</button>
+          <button class="calc-btn" onclick="calcInput('.')">.</button>
+          <button class="calc-btn op" onclick="calcCalculate()">=</button>
+          <button class="calc-btn op" onclick="calcInput('+')">+</button>
+          <button class="calc-btn" style="grid-column:span 4" onclick="calcClear()">C</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARISAN PAGE - PREMIUM -->
+  <div class="container hide" id="pageArisan">
+    <div id="arisanLock" class="lock-overlay hide">
+      <h3>🔒 Fitur Premium</h3>
+      <p>Buka fitur Arisan dengan 3000 koin</p>
+      <button class="btn" onclick="unlockFeature('arisan')">BUKA DENGAN 3000 KOiN</button>
+    </div>
+    <div id="arisanContent" class="hide">
+      <div class="card">
+        <h3>Tambah Anggota Arisan</h3>
+        <input type="text" id="arisanName" placeholder="Nama">
+        <input type="number" id="arisanAmount" placeholder="Jumlah Bayar">
+        <button class="btn" onclick="addArisan()">TAMBAH</button>
+      </div>
+      <div class="card">
+        <h3>Daftar Arisan</h3>
+        <div id="arisanList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PENGATURAN PAGE -->
+  <div class="container hide" id="pageSettings">
+    <div class="card">
+      <h3>Profil Saya</h3>
+      <div style="text-align:center;margin:15px 0">
+        <img id="profilePhoto" src="" style="width:80px;height:80px;border-radius:50%;object-fit:cover;display:none">
+        <button class="btn btn-sec" onclick="document.getElementById('photoFile').click()">Ganti Foto</button>
+        <input type="file" id="photoFile" accept="image/*" style="display:none" onchange="changePhoto(this)">
+      </div>
+      <input type="text" id="profileName" placeholder="Nama">
+      <button class="btn" onclick="updateProfile()">SIMPAN NAMA</button>
+    </div>
+
+    <div class="card">
+      <h3>Tema</h3>
+      <div class="theme-grid" id="themeGrid"></div>
+    </div>
+
+    <div class="card">
+      <h3>Chat CS</h3>
+      <div class="chat-box" id="chatBox"></div>
+      <input type="text" id="chatInput" placeholder="Ketik pesan...">
+      <button class="btn" onclick="sendChat()">KIRIM</button>
+    </div>
+
+    <button class="btn btn-red" onclick="logout()">LOGOUT</button>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="switchTab('home')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <div>Home</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('transaksi')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+      <div>Transaksi</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('tabungan')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2.9 2 2v1h-9c-1.11 0-2.9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+      <div>Tabungan</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('arisan')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      <div>Arisan</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('settings')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0.46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0.61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+      <div>Settings</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL BELI KOIN -->
+<div class="modal" id="coinModal">
+  <div class="modal-box">
+    <h3>🪙 Beli Koin</h3>
+    <div class="card" style="border:2px solid var(--gold)">
+      <h4>Paket 8000 Koin</h4>
+      <p style="font-size:24px;margin:10px 0">Rp 15.000</p>
+      <div class="info-box">
+        <strong>Cara Pembayaran:</strong><br>
+        1. Transfer ke GoPay admin<br>
+        2. Kirim bukti transfer ke WA admin<br>
+        3. Tunggu maksimal 1x24 jam<br>
+        4. Koin akan diisi manual oleh admin
+      </div>
+      <button class="btn btn-gold" onclick="buyCoins()">BELI SEKARANG VIA WA</button>
+    </div>
+    <button class="btn btn-sec" onclick="closeModal('coinModal')">Tutup</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDG4eMhJRsN2uBdXJmBadxfIa76euudMQw",
+  authDomain: "catatn-4cf7a.firebaseapp.com",
+  projectId: "catatn-4cf7a",
+  storageBucket: "catatn-4cf7a.firebasestorage.app",
+  messagingSenderId: "380929865108",
+  appId: "1:380929865108:web:04f7a9b3d2a38328a34b81",
+  measurementId: "G-5GZFGB0C7R"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser = null;
+let userData = null;
+let calcValue = '0';
+let isLoggingIn = false;
+let adminWA = '6281234567890'; // GANTI NOMOR WA LU
+
+// Pull to refresh vars
+let touchStartY = 0;
+let touchCurrentY = 0;
+let isRefreshing = false;
+
+const themes = [
+  {id:'light', name:'Default', premium:false},
+  {id:'dark', name:'Dark', premium:true},
+  {id:'ocean', name:'Ocean', premium:true},
+  {id:'sunset', name:'Sunset', premium:true},
+  {id:'purple', name:'Purple', premium:true},
+  {id:'gold', name:'Gold', premium:true},
+  {id:'mint', name:'Mint', premium:true},
+  {id:'coral', name:'Coral', premium:true},
+  {id:'navy', name:'Navy', premium:true},
+  {id:'rose', name:'Rose', premium:true}
+];
+
+// PULL TO REFRESH
+window.touchStart = (e) => {
+  if(window.scrollY === 0){
+    touchStartY = e.touches[0].clientY;
+  }
+}
+
+window.touchMove = (e) => {
+  if(touchStartY === 0) return;
+  touchCurrentY = e.touches[0].clientY;
+  const diff = touchCurrentY - touchStartY;
+  if(diff > 0 && diff < 100){
+    document.getElementById('pullRefresh').style.transform = `translateY(${diff}px)`;
+  }
+}
+
+window.touchEnd = () => {
+  const diff = touchCurrentY - touchStartY;
+  if(diff > 70 && !isRefreshing){
+    refreshData();
+  }
+  document.getElementById('pullRefresh').style.transform = 'translateY(0)';
+  touchStartY = 0;
+  touchCurrentY = 0;
+}
+
+async function refreshData(){
+  if(isRefreshing) return;
+  isRefreshing = true;
+  document.getElementById('pullRefresh').textContent = '⟳ Memuat...';
+  
+  await loadTransactions();
+  await loadArisan();
+  await loadChat();
+  
+  setTimeout(()=>{
+    document.getElementById('pullRefresh').textContent = '↓ Tarik untuk refresh';
+    isRefreshing = false;
+    toast('Data diperbarui');
+  },1000);
+}
+
+// TAMPILKAN/SEMBUNYIKAN PASSWORD
+window.togglePass = (id, btn) => {
+  const input = document.getElementById(id);
+  if(input.type === 'password'){
+    input.type = 'text';
+    btn.textContent = 'Sembunyikan';
+  }else{
+    input.type = 'password';
+    btn.textContent = 'Tampilkan';
+  }
+}
+
+// CEK ATURAN PASSWORD
+window.checkPassRule = () => {
+  const pass = regPass.value;
+  const len = pass.length >= 8;
+  const upper = /[A-Z]/.test(pass);
+  const lower = /[a-z]/.test(pass);
+  const special = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pass);
+
+  document.getElementById('ruleLen').classList.toggle('ok', len);
+  document.getElementById('ruleUpper').classList.toggle('ok', upper);
+  document.getElementById('ruleLower').classList.toggle('ok', lower);
+  document.getElementById('ruleSpecial').classList.toggle('ok', special);
+
+  document.getElementById('regBtn').disabled = !(len && upper && lower && special);
+}
+
+// AUTH FUNCTIONS
+window.showRegister = () => {
+  document.getElementById('loginForm').classList.add('hide');
+  document.getElementById('registerForm').classList.remove('hide');
+}
+
+window.showLogin = () => {
+  document.getElementById('registerForm').classList.add('hide');
+  document.getElementById('loginForm').classList.remove('hide');
+}
+
+window.login = async () => {
+  if(isLoggingIn) return;
+  isLoggingIn = true;
+
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  btn.textContent = 'LOADING...';
+
+  try{
+    await signInWithEmailAndPassword(auth, loginEmail.value, loginPass.value);
+  }catch(e){
+    if(e.code === 'auth/quota-exceeded'){
+      toast('Firebase lagi diblokir 24 jam. Coba besok atau upgrade ke Blaze');
+    }else if(e.code === 'auth/wrong-password'){
+      toast('Password salah');
+    }else if(e.code === 'auth/user-not-found'){
+      toast('Email belum terdaftar');
+    }else{
+      toast('Login gagal: ' + e.message);
+    }
+  }
+
+  isLoggingIn = false;
+  btn.disabled = false;
+  btn.textContent = 'MASUK';
+}
+
+window.register = async () => {
+  const btn = document.getElementById('regBtn');
+  btn.disabled = true;
+  btn.textContent = 'LOADING...';
+
+  try{
+    const cred = await createUserWithEmailAndPassword(auth, regEmail.value, regPass.value);
+    await setDoc(doc(db, "users", cred.user.uid), {
+      name: regName.value,
+      email: regEmail.value,
+      coins: 0,
+      balance: 0,
+      totalIncome: 0,
+      totalExpense: 0,
+      themes: ['light'],
+      unlockedFeatures: [],
+      photo: '',
+      createdAt: serverTimestamp()
+    });
+    toast('Akun berhasil dibuat! Silakan login');
+    showLogin();
+  }catch(e){
+    if(e.code === 'auth/email-already-in-use'){
+      toast('Email sudah terdaftar');
+    }else{
+      toast('Daftar gagal: '+e.message);
+    }
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'DAFTAR';
+}
+
+window.resetPassword = async () => {
+  const email = prompt('Masukkan email untuk reset password:');
+  if(email){
+    try{
+      await sendPasswordResetEmail(auth, email);
+      toast('Link reset password sudah dikirim ke email');
+    }catch(e){ toast('Gagal: '+e.message) }
+  }
+}
+
+window.logout = () => signOut(auth);
+
+// NAVIGATION
+window.switchTab = (tab) => {
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelector(`.nav-item[onclick="switchTab('${tab}')"]`).classList.add('active');
+
+  ['home','transaksi','tabungan','arisan','settings'].forEach(p=>{
+    document.getElementById('page'+p.charAt(0).toUpperCase()+p.slice(1)).classList.add('hide');
+  });
+
+  document.getElementById('page'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.remove('hide');
+
+  if(tab==='tabungan') checkUnlock('tabungan');
+  if(tab==='arisan') checkUnlock('arisan');
+}
+
+// TRANSACTIONS
+window.addTransaction = async (type) => {
+  const amount = parseInt(type==='income'? incomeAmount.value : expenseAmount.value);
+  const note = type==='income'? incomeNote.value : expenseNote.value;
+
+  if(!amount || amount<=0) return toast('Masukkan jumlah yang valid');
+
+  const now = new Date();
+  const transaction = {
+    type: type,
+    amount: amount,
+    note: note,
+    timestamp: serverTimestamp(),
+    date: now.toLocaleDateString('id-ID'),
+    time: now.toLocaleTimeString('id-ID'),
+    day: now.toLocaleDateString('id-ID', {weekday:'long'}),
+    month: now.toLocaleDateString('id-ID', {month:'long',year:'numeric'})
+  };
+
+  await addDoc(collection(db, "users", currentUser.uid, "transactions"), transaction);
+
+  const newBalance = type==='income'
+    ? userData.balance + amount
+    : userData.balance - amount;
+
+  await updateDoc(doc(db, "users", currentUser.uid), {
+    balance: newBalance,
+    totalIncome: type==='income'? userData.totalIncome + amount : userData.totalIncome,
+    totalExpense: type==='expense'? userData.totalExpense + amount : userData.totalExpense
+  });
+
+  incomeAmount.value = expenseAmount.value = '';
+  incomeNote.value = expenseNote.value = '';
+  toast('Transaksi berhasil disimpan!');
+}
+
+window.addArisan = async () => {
+  const name = arisanName.value.trim();
+  const amount = parseInt(arisanAmount.value);
+  if(!name || !amount) return toast('Lengkapi data');
+
+  const now = new Date();
+  await addDoc(collection(db, "users", currentUser.uid, "arisan"), {
+    name: name,
+    amount: amount,
+    timestamp: serverTimestamp(),
+    date: now.toLocaleDateString('id-ID'),
+    time: now.toLocaleTimeString('id-ID'),
+    day: now.toLocaleDateString('id-ID', {weekday:'long'}),
+    month: now.toLocaleDateString('id-ID', {month:'long',year:'numeric'})
+  });
+
+  arisanName.value = arisanAmount.value = '';
+  toast('Data arisan tersimpan!');
+}
+
+// PREMIUM FEATURES
+function checkUnlock(feature){
+  const unlocked = userData.unlockedFeatures?.includes(feature) || false;
+  document.getElementById(feature+'Lock').classList.toggle('hide', unlocked);
+  document.getElementById(feature+'Content').classList.toggle('hide', !unlocked);
+}
+
+window.unlockFeature = async (feature) => {
+  if(userData.coins < 3000) return toast('Koin tidak cukup');
+
+  await updateDoc(doc(db, "users", currentUser.uid), {
+    coins: userData.coins - 3000,
+    unlockedFeatures: arrayUnion(feature)
+  });
+
+  toast('Fitur berhasil dibuka!');
+  checkUnlock(feature);
+}
+
+// COINS
+window.openCoinShop = () => document.getElementById('coinModal').classList.add('show');
+window.closeModal = (id) => document.getElementById(id).classList.remove('show');
+
+window.buyCoins = () => {
+  const msg = `Halo Admin, saya mau beli 8000 koin Rp 15.000.
+Nama: ${userData.name}
+UID: ${currentUser.uid}
+
+Saya sudah transfer ke GoPay. Ini bukti pembayarannya, tolong isi koin saya.
+Saya mengerti proses maksimal 1x24 jam.`;
+  window.open(`https://wa.me/${adminWA}?text=${encodeURIComponent(msg)}`);
+  closeModal('coinModal');
+}
+
+// THEMES
+function initThemes(){
+  const grid = document.getElementById('themeGrid');
+  grid.innerHTML = themes.map(t=>{
+    const owned =!t.premium || userData.themes.includes(t.id);
+    return `
+      <div class="theme-item ${!owned?'lock':''}" onclick="setTheme('${t.id}',${t.premium},${owned})" style="background:var(--card)">
+        <div>${t.name}</div>
+        ${t.premium &&!owned? '<small>400 🪙</small>' : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+window.setTheme = async (themeId, isPremium, owned) => {
+  if(isPremium &&!owned){
+    if(userData.coins < 400) return toast('Koin tidak cukup');
+    await updateDoc(doc(db, "users", currentUser.uid), {
+      coins: userData.coins - 400,
+      themes: arrayUnion(themeId)
+    });
+  }
+  document.body.dataset.theme = themeId;
+  localStorage.setItem('theme', themeId);
+}
+
+// PROFILE
+window.changePhoto = (input) => {
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 5*1024*1024) return toast('Foto max 5MB');
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const base64 = e.target.result;
+    await updateDoc(doc(db, "users", currentUser.uid), {photo: base64});
+    document.getElementById('profilePhoto').src = base64;
+    document.getElementById('profilePhoto').style.display = 'block';
+    toast('Foto berhasil diubah!');
+  };
+  reader.readAsDataURL(file);
+}
+
+window.updateProfile = async () => {
+  const name = profileName.value.trim();
+  if(!name) return toast('Nama tidak boleh kosong');
+  await updateDoc(doc(db, "users", currentUser.uid), {name: name});
+  toast('Nama berhasil diubah!');
+}
+
+// CHAT CS - FIXED
+window.sendChat = async () => {
+  const msg = chatInput.value.trim();
+  if(!msg) return;
+
+  try{
+    await addDoc(collection(db, "users", currentUser.uid, "chat"), {
+      message: msg,
+      sender: 'user',
+      timestamp: serverTimestamp()
+    });
+    chatInput.value = '';
+    toast('Pesan terkirim');
+  }catch(e){
+    toast('Gagal kirim pesan: ' + e.message);
+  }
+}
+
+// CALCULATOR
+window.calcInput = (val) => {
+  if(calcValue==='0') calcValue = val;
+  else calcValue += val;
+  document.getElementById('calcDisplay').textContent = calcValue;
+}
+
+window.calcCalculate = () => {
+  try{
+    calcValue = eval(calcValue).toString();
+    document.getElementById('calcDisplay').textContent = calcValue;
+  }catch(e){ toast('Error') }
+}
+
+window.calcClear = () => {
+  calcValue = '0';
+  document.getElementById('calcDisplay').textContent = '0';
+}
+
+// LOAD DATA
+async function loadTransactions(){
+  const q = query(collection(db, "users", currentUser.uid, "transactions"), orderBy("timestamp","desc"));
+  onSnapshot(q, (snap)=>{
+    let htmlToday = '';
+    let htmlAll = '';
+    const today = new Date().toLocaleDateString('id-ID');
+
+    snap.forEach(doc=>{
+      const t = doc.data();
+      const item = `
+        <div class="transaction-item ${t.type}">
+          <div>
+            <strong>${t.note || t.type}</strong><br>
+            <small>${t.day}, ${t.date} ${t.time}</small>
+          </div>
+          <div>Rp ${t.amount.toLocaleString('id-ID')}</div>
+        </div>
+      `;
+      htmlAll += item;
+      if(t.date===today) htmlToday += item;
+    });
+
+    document.getElementById('todayTransactions').innerHTML = htmlToday || '<p>Tidak ada transaksi hari ini</p>';
+    document.getElementById('allTransactions').innerHTML = htmlAll || '<p>Belum ada transaksi</p>';
+  });
+}
+
+async function loadArisan(){
+  const q = query(collection(db, "users", currentUser.uid, "arisan"), orderBy("timestamp","desc"));
+  onSnapshot(q, (snap)=>{
+    let html = '';
+    snap.forEach(doc=>{
+      const a = doc.data();
+      html += `
+        <div class="arisan-item">
+          <strong>${a.name}</strong> - Rp ${a.amount.toLocaleString('id-ID')}<br>
+          <small>${a.day}, ${a.date} ${a.time}</small>
+        </div>
+      `;
+    });
+    document.getElementById('arisanList').innerHTML = html || '<p>Belum ada data arisan</p>';
+  });
+}
+
+async function loadChat(){
+  const q = query(collection(db, "users", currentUser.uid, "chat"), orderBy("timestamp","asc"));
+  onSnapshot(q, (snap)=>{
+    let html = '';
+    snap.forEach(doc=>{
+      const c = doc.data();
+      html += `<div class="chat-msg ${c.sender}">${c.message}</div>`;
+    });
+    document.getElementById('chatBox').innerHTML = html;
+    document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
+  });
+}
+
+function toast(msg){
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),2500);
+}
+
+// AUTH STATE
+onAuthStateChanged(auth, async (user) => {
+  if(user){
+    currentUser = user;
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+
+    if(userDoc.exists()){
+      userData = userDoc.data();
+
+      document.getElementById('authPage').classList.remove('show');
+      document.getElementById('mainApp').classList.remove('hide');
+
+      // Update UI
+      document.getElementById('userCoins').textContent = userData.coins || 0;
+      document.getElementById('totalBalance').textContent = 'Rp ' + (userData.balance || 0).toLocaleString('id-ID');
+      document.getElementById('totalIncome').textContent = 'Rp ' + (userData.totalIncome || 0).toLocaleString('id-ID');
+      document.getElementById('totalExpense').textContent = 'Rp ' + (userData.totalExpense || 0).toLocaleString('id-ID');
+      document.getElementById('tabunganAmount').textContent = 'Rp ' + (userData.balance || 0).toLocaleString('id-ID');
+      document.getElementById('profileName').value = userData.name || '';
+
+      if(userData.photo){
+        document.getElementById('profilePhoto').src = userData.photo;
+        document.getElementById('profilePhoto').style.display = 'block';
+      }
+
+      // Load data
+      loadTransactions();
+      loadArisan();
+      loadChat();
+      initThemes();
+
+      // Load saved theme
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      document.body.dataset.theme = savedTheme;
+    }
+  } else {
+    document.getElementById('authPage').classList.add('show');
+    document.getElementById('mainApp').classList.add('hide');
+  }
+});
+
+// WITHDRAW TABUNGAN
+window.withdrawTabungan = async () => {
+  const amount = parseInt(prompt('Masukkan jumlah yang ingin ditarik:'));
+  if(!amount || amount<=0) return toast('Jumlah tidak valid');
+  if(amount > userData.balance) return toast('Saldo tidak cukup');
+
+  await updateDoc(doc(db, "users", currentUser.uid), {
+    balance: userData.balance - amount,
+    totalExpense: userData.totalExpense + amount
+  });
+
+  await addDoc(collection(db, "users", currentUser.uid, "transactions"), {
+    type: 'expense',
+    amount: amount,
+    note: 'Tarik Tabungan',
+    timestamp: serverTimestamp(),
+    date: new Date().toLocaleDateString('id-ID'),
+    time: new Date().toLocaleTimeString('id-ID'),
+    day: new Date().toLocaleDateString('id-ID', {weekday:'long'}),
+    month: new Date().toLocaleDateString('id-ID', {month:'long',year:'numeric'})
+  });
+
+  toast('Penarikan berhasil!');
+}
+</script>
+</body>
+</html>

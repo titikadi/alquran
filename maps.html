@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>MasjidMap</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"/>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+  body,html{height:100%;background:#fff}
+
+  #map{height:100%;width:100%}
+
+ .header{
+    position:absolute;top:0;left:0;right:0;z-index:1000;
+    background:linear-gradient(135deg,#1A4D3A,#2D7A5F);
+    padding:15px 20px;color:white;display:flex;align-items:center;gap:12px
+  }
+ .header img{width:45px;height:45px;border-radius:10px}
+ .header-text h2{font-size:18px;font-weight:700;margin-bottom:2px}
+ .header-text p{font-size:12px;opacity:0.9}
+ .btn-lokasi{
+    margin-left:auto;background:white;color:#1A4D3A;border:none;
+    padding:8px 14px;border-radius:20px;font-size:13px;font-weight:600;
+    display:flex;align-items:center;gap:5px;cursor:pointer
+  }
+
+ .bottom-sheet{
+    position:absolute;bottom:0;left:0;right:0;z-index:1000;
+    background:white;border-radius:24px 24px 0 0;
+    box-shadow:0 -8px 30px rgba(0,0,0,0.12);
+    max-height:60%;overflow:hidden;display:flex;flex-direction:column
+  }
+ .sheet-handle{
+    width:40px;height:4px;background:#ddd;border-radius:2px;
+    margin:12px auto
+  }
+
+ .sheet-content{padding:0 20px 20px;overflow-y:auto}
+
+ .title-section{margin-bottom:15px}
+ .title-section h3{font-size:12px;color:#1A4D3A;font-weight:700;letter-spacing:1px;margin-bottom:5px}
+ .title-section.count{font-size:32px;font-weight:800;color:#1A4D3A}
+ .title-section.count span{font-size:14px;font-weight:400;color:#666}
+
+ .radius-row{
+    display:flex;justify-content:space-between;align-items:center;
+    margin:20px 0;font-size:14px;color:#333
+  }
+ .radius-row span:last-child{font-weight:700;color:#1A4D3A}
+
+  input[type=range]{
+    width:100%;height:6px;border-radius:3px;background:#e0e0e0;
+    outline:none;-webkit-appearance:none
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:20px;height:20px;
+    border-radius:50%;background:#1A4D3A;cursor:pointer;
+    box-shadow:0 2px 6px rgba(0,0,0,0.2)
+  }
+
+ .filter-tabs{display:flex;gap:8px;margin:15px 0 20px;overflow-x:auto;padding-bottom:5px}
+ .filter-tab{
+    padding:8px 18px;border-radius:20px;border:1px solid #ddd;
+    background:white;font-size:13px;white-space:nowrap;cursor:pointer;
+    transition:all 0.2s
+  }
+ .filter-tab.active{
+    background:#1A4D3A;color:white;border-color:#1A4D3A
+  }
+
+ .masjid-item{
+    display:flex;align-items:center;gap:12px;padding:15px 0;
+    border-bottom:1px solid #f0f0f0
+  }
+ .masjid-num{
+    width:35px;height:35px;border-radius:50%;background:#E8F5F1;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;color:#1A4D3A;font-size:14px;flex-shrink:0
+  }
+ .masjid-info{flex:1}
+ .masjid-name{font-weight:600;font-size:15px;margin-bottom:6px}
+ .masjid-meta{display:flex;gap:8px;flex-wrap:wrap}
+ .badge{
+    padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600
+  }
+ .badge-distance{background:#E8F5F1;color:#1A4D3A}
+ .badge-type{background:#FFF4E6;color:#D97706}
+ .btn-go{
+    width:38px;height:38px;border-radius:50%;background:#1A4D3A;
+    border:none;color:white;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;font-size:18px
+  }
+
+ .loading{text-align:center;padding:30px;color:#666}
+
+  /* Route Instructions */
+ .route-header{
+    display:flex;align-items:center;gap:10px;margin-bottom:15px;
+    padding-bottom:15px;border-bottom:1px solid #eee
+  }
+ .route-header button{
+    background:none;border:none;font-size:24px;color:#1A4D3A;cursor:pointer
+  }
+ .route-summary{flex:1}
+ .route-summary h4{font-size:16px;margin-bottom:4px}
+ .route-summary p{font-size:13px;color:#666}
+
+ .instruction-step{
+    display:flex;gap:12px;padding:12px 0;border-bottom:1px solid #f5f5f5
+  }
+ .step-icon{
+    width:24px;height:24px;background:#E8F5F1;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;flex-shrink:0
+  }
+ .step-text{flex:1;font-size:14px;line-height:1.4}
+ .step-distance{font-size:12px;color:#666;margin-top:3px}
+
+  /* Hide default routing panel, keep only the line */
+ .leaflet-routing-container{display:none}
+
+  /* Make route line blue and thick */
+ .leaflet-routing-line-path{
+    stroke:#2196F3!important;
+    stroke-width:5px!important;
+    stroke-opacity:0.9!important;
+  }
+</style>
+</head>
+<body>
+<div class="header">
+  <img src="https://cdn-icons-png.flaticon.com/512/1051/1051233.png" alt="masjid">
+  <div class="header-text">
+    <h2>MasjidMap</h2>
+    <p>Temukan Masjid Terdekat</p>
+  </div>
+  <button class="btn-lokasi" onclick="goToMyLocation()">📍 Lokasi Saya</button>
+</div>
+
+<div id="map"></div>
+
+<div class="bottom-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-content" id="sheetContent">
+    <div class="loading">Mengambil lokasi GPS...</div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+<script>
+let map, userLocation, userMarker, markers = [], routingControl;
+let allMasjids = [], currentFilter = 'all', currentRadius = 2000;
+let currentView = 'list';
+
+function initMap() {
+  map = L.map('map').setView([-6.2088, 106.8456], 13);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        userLocation = [pos.coords.latitude, pos.coords.longitude];
+        map.setView(userLocation, 15);
+
+        userMarker = L.marker(userLocation, {
+          icon: L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/64/64113.png',
+            iconSize: [35, 35]
+          })
+        }).addTo(map).bindPopup("Lokasi Saya");
+
+        cariMasjid();
+      },
+      () => {updateSheet('<div class="loading">Gagal ambil lokasi. Aktifkan GPS.</div>')}
+    );
+  }
+}
+
+function cariMasjid() {
+  updateSheet('<div class="loading">Mencari masjid...</div>');
+
+  let query = `
+    [out:json][timeout:25];
+    (
+      node["amenity"="place_of_worship"]["religion"="muslim"](around:${currentRadius},${userLocation[0]},${userLocation[1]});
+      way["amenity"="place_of_worship"]["religion"="muslim"](around:${currentRadius},${userLocation[0]},${userLocation[1]});
+    );
+    out center 50;
+  `;
+
+  fetch('https://overpass-api.de/api/interpreter', {
+    method: 'POST',
+    body: query
+  })
+ .then(res => res.json())
+ .then(data => {
+    allMasjids = data.elements.map((p,i) => ({
+      id: i+1,
+      lat: p.lat || p.center.lat,
+      lon: p.lon || p.center.lon,
+      name: p.tags.name || "Masjid/Mushola",
+      type: p.tags.building || "Masjid"
+    }));
+    filterAndShow();
+  })
+ .catch(() => updateSheet('<div class="loading">Gagal ambil data.</div>'));
+}
+
+function filterAndShow() {
+  currentView = 'list';
+  let filtered = allMasjids.filter(m => {
+    if(currentFilter === 'all') return true;
+    if(currentFilter === 'masjid') return m.name.toLowerCase().includes('masjid');
+    if(currentFilter === 'musholla') return m.name.toLowerCase().includes('musholla') || m.name.toLowerCase().includes('mushola');
+    if(currentFilter === 'jami') return m.name.toLowerCase().includes('jami');
+    return true;
+  });
+
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+
+  let html = `
+    <div class="title-section">
+      <h3>MASJID DITEMUKAN</h3>
+      <div class="count">${filtered.length} <span>masjid</span></div>
+    </div>
+
+    <div class="radius-row">
+      <span>Radius Pencarian</span>
+      <span>${currentRadius/1000} km</span>
+    </div>
+    <input type="range" min="500" max="5000" step="500" value="${currentRadius}"
+           onchange="changeRadius(this.value)">
+
+    <div class="filter-tabs">
+      <div class="filter-tab ${currentFilter==='all'?'active':''}" onclick="setFilter('all')">Semua</div>
+      <div class="filter-tab ${currentFilter==='masjid'?'active':''}" onclick="setFilter('masjid')">Masjid</div>
+      <div class="filter-tab ${currentFilter==='musholla'?'active':''}" onclick="setFilter('musholla')">Musholla</div>
+      <div class="filter-tab ${currentFilter==='jami'?'active':''}" onclick="setFilter('jami')">Masjid Jami'</div>
+    </div>
+  `;
+
+  filtered.forEach((m,i) => {
+    let distance = hitungJarak(userLocation[0], userLocation[1], m.lat, m.lon);
+
+    let marker = L.marker([m.lat, m.lon], {
+      icon: L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/1051/1051233.png',
+        iconSize: [40, 40]
+      })
+    }).addTo(map).bindPopup(m.name);
+
+    markers.push(marker);
+
+    html += `
+      <div class="masjid-item">
+        <div class="masjid-num">${i+1}</div>
+        <div class="masjid-info">
+          <div class="masjid-name">${m.name}</div>
+          <div class="masjid-meta">
+            <span class="badge badge-distance">📏 ${distance<1000?distance.toFixed(0)+'m':(distance/1000).toFixed(1)+'km'}</span>
+            <span class="badge badge-type">${m.type}</span>
+          </div>
+        </div>
+        <button class="btn-go" onclick="buatRute(${m.lat},${m.lon}, '${m.name.replace(/'/g,"")}')">→</button>
+      </div>
+    `;
+  });
+
+  updateSheet(html);
+}
+
+function buatRute(destLat, destLon, destName){
+  currentView = 'route';
+
+  // Hapus rute lama
+  if(routingControl) map.removeControl(routingControl);
+
+  // Buat rute baru - garis biru dari lokasi user ke masjid
+  routingControl = L.Routing.control({
+    waypoints: [
+      L.latLng(userLocation[0], userLocation[1]),
+      L.latLng(destLat, destLon)
+    ],
+    routeWhileDragging: false,
+    showAlternatives: false,
+    addWaypoints: false,
+    draggableWaypoints: false,
+    createMarker: () => null, // Hapus marker A dan B bawaan
+    lineOptions: {
+      styles: [{color: '#2196F3', weight: 6, opacity: 0.9}] // Garis biru tebal
+    },
+    router: L.Routing.osrmv1({
+      serviceUrl: 'https://router.project-osrm.org/route/v1',
+      profile: 'foot' // jalan kaki
+    })
+  }).addTo(map);
+
+  routingControl.on('routesfound', function(e) {
+    let route = e.routes[0];
+    showInstructions(route, destName);
+  });
+
+  // Zoom biar kelihatan rute nya
+  map.fitBounds([
+    [userLocation[0], userLocation[1]],
+    [destLat, destLon]
+  ], {padding: [80, 80]});
+}
+
+function showInstructions(route, destName){
+  let summary = route.summary;
+  let distance = (summary.totalDistance/1000).toFixed(1);
+  let time = Math.round(summary.totalTime/60);
+
+  let html = `
+    <div class="route-header">
+      <button onclick="backToList()">←</button>
+      <div class="route-summary">
+        <h4>Petunjuk ke ${destName}</h4>
+        <p>${distance} km • ${time} menit jalan kaki</p>
+      </div>
+    </div>
+  `;
+
+  route.instructions.forEach((step, i) => {
+    let icon = getStepIcon(step.type);
+    html += `
+      <div class="instruction-step">
+        <div class="step-icon">${icon}</div>
+        <div class="step-text">
+          ${step.text}
+          <div class="step-distance">${step.distance > 50? (step.distance/1000).toFixed(1)+' km' : step.distance+' m'}</div>
+        </div>
+      </div>
+    `;
+  });
+
+  updateSheet(html);
+}
+
+function getStepIcon(type){
+  const icons = {
+    'Head': '↑', 'TurnRight': '↗', 'TurnLeft': '↖',
+    'Straight': '↑', 'Right': '→', 'Left': '←',
+    'Arrived': '🎯', 'Roundabout': '⭕'
+  };
+  return icons[type] || '•';
+}
+
+function backToList(){
+  if(routingControl) map.removeControl(routingControl);
+  currentView = 'list';
+  filterAndShow();
+}
+
+function setFilter(type){
+  currentFilter = type;
+  filterAndShow();
+}
+
+function changeRadius(val){
+  currentRadius = parseInt(val);
+  cariMasjid();
+}
+
+function goToMyLocation(){
+  if(userLocation) map.setView(userLocation, 16);
+}
+
+function updateSheet(html){
+  document.getElementById("sheetContent").innerHTML = html;
+}
+
+function hitungJarak(lat1, lon1, lat2, lon2) {
+  let R = 6371000;
+  let dLat = (lat2-lat1) * Math.PI / 180;
+  let dLon = (lon2-lon1) * Math.PI / 180;
+  let a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+          Math.sin(dLon/2) * Math.sin(dLon/2);
+  let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+initMap();
+</script>
+</body>
+</html>

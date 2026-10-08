@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asmaul Husna 99</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif}
+body{background:#f5f5f5;color:#333}
+header{background:linear-gradient(135deg,#0b8457,#1b5e20);color:white;padding:20px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
+header h1{font-size:22px;margin-bottom:5px}
+header p{font-size:13px;opacity:0.9}
+.container{padding:15px;max-width:700px;margin:auto}
+.card{background:white;margin-bottom:12px;padding:15px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,0.1);transition:0.2s}
+.card:active{transform:scale(0.98);background:#e8f5e9}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.number{background:#0b8457;color:white;width:35px;height:35px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-weight:bold}
+.arab{font-size:32px;text-align:right;direction:rtl;margin:10px 0;color:#1b5e20}
+.latin{font-size:18px;font-weight:600;color:#0b8457;margin-bottom:5px}
+.arti{font-size:15px;color:#555;line-height:1.4}
+.controls{display:flex;gap:10px;margin-top:10px}
+.btn{flex:1;padding:10px;border:none;border-radius:8px;background:#0b8457;color:white;font-size:14px;cursor:pointer}
+.btn:active{background:#1b5e20}
+.btn.play{background:#ff9800}
+.playing{border:2px solid #0b8457}
+.footer{text-align:center;padding:20px;font-size:12px;color:#777}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>99 Asmaul Husna</h1>
+  <p>Nama-nama Allah yang Indah</p>
+</header>
+
+<div class="container" id="list"></div>
+
+<div class="footer">Audio by quranicaudio.com</div>
+
+<script>
+const asmaul = [
+{"no":1,"arab":"الرَّحْمَٰنُ","latin":"Ar-Rahmaan","arti":"Yang Maha Pengasih"},
+{"no":2,"arab":"الرَّحِيمُ","latin":"Ar-Rahiim","arti":"Yang Maha Penyayang"},
+{"no":3,"arab":"الْمَلِكُ","latin":"Al-Malik","arti":"Yang Maha Merajai"},
+{"no":4,"arab":"الْقُدُّوسُ","latin":"Al-Quddus","arti":"Yang Maha Suci"},
+{"no":5,"arab":"السَّلَامُ","latin":"As-Salaam","arti":"Yang Maha Memberi Kesejahteraan"},
+{"no":6,"arab":"الْمُؤْمِنُ","latin":"Al-Mu'min","arti":"Yang Maha Memberi Keamanan"},
+{"no":7,"arab":"الْمُهَيْمِنُ","latin":"Al-Muhaimin","arti":"Yang Maha Memelihara"},
+{"no":8,"arab":"الْعَزِيزُ","latin":"Al-'Aziiz","arti":"Yang Maha Perkasa"},
+{"no":9,"arab":"الْجَبَّارُ","latin":"Al-Jabbaar","arti":"Yang Maha Kuasa"},
+{"no":10,"arab":"الْمُتَكَبِّرُ","latin":"Al-Mutakabbir","arti":"Yang Maha Megah"},
+{"no":11,"arab":"الْخَالِقُ","latin":"Al-Khaaliq","arti":"Yang Maha Pencipta"},
+{"no":12,"arab":"الْبَارِئُ","latin":"Al-Baari'","arti":"Yang Maha Melepaskan"},
+{"no":13,"arab":"الْمُصَوِّرُ","latin":"Al-Mushawwir","arti":"Yang Maha Membentuk Rupa"},
+{"no":14,"arab":"الْغَفَّارُ","latin":"Al-Ghaffaar","arti":"Yang Maha Pengampun"},
+{"no":15,"arab":"الْقَهَّارُ","latin":"Al-Qahhaar","arti":"Yang Maha Menundukkan"},
+{"no":16,"arab":"الْوَهَّابُ","latin":"Al-Wahhaab","arti":"Yang Maha Pemberi Karunia"},
+{"no":17,"arab":"الرَّزَّاقُ","latin":"Ar-Razzaaq","arti":"Yang Maha Pemberi Rezeki"},
+{"no":18,"arab":"الْفَتَّاحُ","latin":"Al-Fattaah","arti":"Yang Maha Pembuka Rahmat"},
+{"no":19,"arab":"الْعَلِيمُ","latin":"Al-'Aliim","arti":"Yang Maha Mengetahui"},
+{"no":20,"arab":"الْقَابِضُ","latin":"Al-Qaabid","arti":"Yang Maha Menyempitkan"},
+{"no":21,"arab":"الْبَاسِطُ","latin":"Al-Baasit","arti":"Yang Maha Melapangkan"},
+{"no":22,"arab":"الْخَافِضُ","latin":"Al-Khaafid","arti":"Yang Maha Merendahkan"},
+{"no":23,"arab":"الرَّافِعُ","latin":"Ar-Raafi'","arti":"Yang Maha Meninggikan"},
+{"no":24,"arab":"الْمُعِزُّ","latin":"Al-Mu'izz","arti":"Yang Maha Memuliakan"},
+{"no":25,"arab":"الْمُذِلُّ","latin":"Al-Mudzil","arti":"Yang Maha Menghinakan"},
+{"no":26,"arab":"السَّمِيعُ","latin":"As-Samii'","arti":"Yang Maha Mendengar"},
+{"no":27,"arab":"الْبَصِيرُ","latin":"Al-Bashiir","arti":"Yang Maha Melihat"},
+{"no":28,"arab":"الْحَكَمُ","latin":"Al-Hakam","arti":"Yang Maha Menetapkan"},
+{"no":29,"arab":"الْعَدْلُ","latin":"Al-'Adl","arti":"Yang Maha Adil"},
+{"no":30,"arab":"اللَّطِيفُ","latin":"Al-Lathiif","arti":"Yang Maha Lembut"},
+{"no":31,"arab":"الْخَبِيرُ","latin":"Al-Khabiir","arti":"Yang Maha Mengetahui Rahasia"},
+{"no":32,"arab":"الْحَلِيمُ","latin":"Al-Haliim","arti":"Yang Maha Penyantun"},
+{"no":33,"arab":"الْعَظِيمُ","latin":"Al-'Azhiim","arti":"Yang Maha Agung"},
+{"no":34,"arab":"الْغَفُورُ","latin":"Al-Ghafuur","arti":"Yang Maha Pengampun"},
+{"no":35,"arab":"الشَّكُورُ","latin":"Asy-Syakuur","arti":"Yang Maha Pembalas Budi"},
+{"no":36,"arab":"الْعَلِيُّ","latin":"Al-'Aliyy","arti":"Yang Maha Tinggi"},
+{"no":37,"arab":"الْكَبِيرُ","latin":"Al-Kabiir","arti":"Yang Maha Besar"},
+{"no":38,"arab":"الْحَفِيظُ","latin":"Al-Hafiizh","arti":"Yang Maha Memelihara"},
+{"no":39,"arab":"الْمُقِيتُ","latin":"Al-Muqiit","arti":"Yang Maha Pemberi Kecukupan"},
+{"no":40,"arab":"الْحَسِيبُ","latin":"Al-Hasiib","arti":"Yang Maha Membuat Perhitungan"},
+{"no":41,"arab":"الْجَلِيلُ","latin":"Al-Jaliil","arti":"Yang Maha Luhur"},
+{"no":42,"arab":"الْكَرِيمُ","latin":"Al-Kariim","arti":"Yang Maha Pemurah"},
+{"no":43,"arab":"الرَّقِيبُ","latin":"Ar-Raqiib","arti":"Yang Maha Mengawasi"},
+{"no":44,"arab":"الْمُجِيبُ","latin":"Al-Mujiib","arti":"Yang Maha Mengabulkan"},
+{"no":45,"arab":"الْوَاسِعُ","latin":"Al-Waasi'","arti":"Yang Maha Luas"},
+{"no":46,"arab":"الْحَكِيمُ","latin":"Al-Hakiim","arti":"Yang Maha Bijaksana"},
+{"no":47,"arab":"الْوَدُودُ","latin":"Al-Waduud","arti":"Yang Maha Mencintai"},
+{"no":48,"arab":"الْمَجِيدُ","latin":"Al-Majiid","arti":"Yang Maha Mulia"},
+{"no":49,"arab":"الْبَاعِثُ","latin":"Al-Baa'its","arti":"Yang Maha Membangkitkan"},
+{"no":50,"arab":"الشَّهِيدُ","latin":"Asy-Syahiid","arti":"Yang Maha Menyaksikan"},
+{"no":51,"arab":"الْحَقُّ","latin":"Al-Haqq","arti":"Yang Maha Benar"},
+{"no":52,"arab":"الْوَكِيلُ","latin":"Al-Wakiil","arti":"Yang Maha Memelihara"},
+{"no":53,"arab":"الْقَوِيُّ","latin":"Al-Qawiyy","arti":"Yang Maha Kuat"},
+{"no":54,"arab":"الْمَتِينُ","latin":"Al-Matiin","arti":"Yang Maha Kokoh"},
+{"no":55,"arab":"الْوَلِيُّ","latin":"Al-Waliyy","arti":"Yang Maha Melindungi"},
+{"no":56,"arab":"الْحَمِيدُ","latin":"Al-Hamiid","arti":"Yang Maha Terpuji"},
+{"no":57,"arab":"الْمُحْصِي","latin":"Al-Muhshii","arti":"Yang Maha Menghitung"},
+{"no":58,"arab":"الْمُبْدِئُ","latin":"Al-Mubdi'","arti":"Yang Maha Memulai"},
+{"no":59,"arab":"الْمُعِيدُ","latin":"Al-Mu'iid","arti":"Yang Maha Mengembalikan"},
+{"no":60,"arab":"الْمُحْيِي","latin":"Al-Muhyii","arti":"Yang Maha Menghidupkan"},
+{"no":61,"arab":"الْمُمِيتُ","latin":"Al-Mumiit","arti":"Yang Maha Mematikan"},
+{"no":62,"arab":"الْحَيُّ","latin":"Al-Hayy","arti":"Yang Maha Hidup"},
+{"no":63,"arab":"الْقَيُّومُ","latin":"Al-Qayyuum","arti":"Yang Maha Mandiri"},
+{"no":64,"arab":"الْوَاجِدُ","latin":"Al-Waajid","arti":"Yang Maha Penemu"},
+{"no":65,"arab":"الْمَاجِدُ","latin":"Al-Maajid","arti":"Yang Maha Mulia"},
+{"no":66,"arab":"الْوَاحِدُ","latin":"Al-Waahid","arti":"Yang Maha Esa"},
+{"no":67,"arab":"الْأَحَدُ","latin":"Al-Ahad","arti":"Yang Maha Tunggal"},
+{"no":68,"arab":"الصَّمَدُ","latin":"As-Shamad","arti":"Yang Maha Dibutuhkan"},
+{"no":69,"arab":"الْقَادِرُ","latin":"Al-Qaadir","arti":"Yang Maha Berkuasa"},
+{"no":70,"arab":"الْمُقْتَدِرُ","latin":"Al-Muqtadir","arti":"Yang Maha Berkuasa"},
+{"no":71,"arab":"الْمُقَدِّمُ","latin":"Al-Muqaddim","arti":"Yang Maha Mendahulukan"},
+{"no":72,"arab":"الْمُؤَخِّرُ","latin":"Al-Mu'akkhir","arti":"Yang Maha Mengakhirkan"},
+{"no":73,"arab":"الْأَوَّلُ","latin":"Al-Awwal","arti":"Yang Maha Awal"},
+{"no":74,"arab":"الْآخِرُ","latin":"Al-Akhir","arti":"Yang Maha Akhir"},
+{"no":75,"arab":"الظَّاهِرُ","latin":"Adh-Dhaahir","arti":"Yang Maha Nyata"},
+{"no":76,"arab":"الْبَاطِنُ","latin":"Al-Baathin","arti":"Yang Maha Tersembunyi"},
+{"no":77,"arab":"الْوَالِي","latin":"Al-Waali","arti":"Yang Maha Memerintah"},
+{"no":78,"arab":"الْمُتَعَالِي","latin":"Al-Muta'aalii","arti":"Yang Maha Tinggi"},
+{"no":79,"arab":"الْبَرُّ","latin":"Al-Barr","arti":"Yang Maha Penderma"},
+{"no":80,"arab":"التَّوَّابُ","latin":"At-Tawwaab","arti":"Yang Maha Penerima Taubat"},
+{"no":81,"arab":"الْمُنْتَقِمُ","latin":"Al-Muntaqim","arti":"Yang Maha Penyiksa"},
+{"no":82,"arab":"الْعَفُوُّ","latin":"Al-'Afuww","arti":"Yang Maha Pemaaf"},
+{"no":83,"arab":"الرَّؤُوفُ","latin":"Ar-Ra'uuf","arti":"Yang Maha Pengasih"},
+{"no":84,"arab":"مَالِكُ الْمُلْكِ","latin":"Maalikul Mulk","arti":"Yang Maha Menguasai Kerajaan"},
+{"no":85,"arab":"ذُو الْجَلَالِ وَالْإِكْرَامِ","latin":"Dzul Jalaali Wal Ikraam","arti":"Yang Maha Memiliki Kebesaran dan Kemuliaan"},
+{"no":86,"arab":"الْمُقْسِطُ","latin":"Al-Muqsith","arti":"Yang Maha Adil"},
+{"no":87,"arab":"الْجَامِعُ","latin":"Al-Jaami'","arti":"Yang Maha Mengumpulkan"},
+{"no":88,"arab":"الْغَنِيُّ","latin":"Al-Ghaniyy","arti":"Yang Maha Kaya"},
+{"no":89,"arab":"الْمُغْنِي","latin":"Al-Mughnii","arti":"Yang Maha Memberi Kekayaan"},
+{"no":90,"arab":"الْمَانِعُ","latin":"Al-Maani'","arti":"Yang Maha Mencegah"},
+{"no":91,"arab":"الضَّارُّ","latin":"Ad-Dhaarr","arti":"Yang Maha Mendatangkan Mudharat"},
+{"no":92,"arab":"النَّافِعُ","latin":"An-Naafi'","arti":"Yang Maha Memberi Manfaat"},
+{"no":93,"arab":"النُّورُ","latin":"An-Nuur","arti":"Yang Maha Bercahaya"},
+{"no":94,"arab":"الْهَادِي","latin":"Al-Haadii","arti":"Yang Maha Memberi Petunjuk"},
+{"no":95,"arab":"الْبَدِيعُ","latin":"Al-Badii'","arti":"Yang Maha Pencipta yang Tiada Bandingannya"},
+{"no":96,"arab":"الْبَاقِي","latin":"Al-Baaqii","arti":"Yang Maha Kekal"},
+{"no":97,"arab":"الْوَارِثُ","latin":"Al-Waarits","arti":"Yang Maha Mewarisi"},
+{"no":98,"arab":"الرَّشِيدُ","latin":"Ar-Rasyiid","arti":"Yang Maha Pandai"},
+{"no":99,"arab":"الصَّبُورُ","latin":"As-Shabuur","arti":"Yang Maha Sabar"}
+];
+
+let currentAudio = null;
+let currentIndex = -1;
+
+function renderList(){
+  let html = "";
+  asmaul.forEach((a,i)=>{
+    html += `
+    <div class="card" id="card${i}" onclick="playAudio(${i})">
+      <div class="top">
+        <div class="number">${a.no}</div>
+        <button class="btn play" onclick="event.stopPropagation();playAudio(${i})">▶ Play</button>
+      </div>
+      <div class="arab">${a.arab}</div>
+      <div class="latin">${a.latin}</div>
+      <div class="arti">${a.arti}</div>
+      <audio id="audio${i}" src="https://quranicaudio.com/api/audio/asmaul-husna/${a.no}" preload="none" onended="nextAudio()"></audio>
+    </div>
+    `;
+  });
+  document.getElementById("list").innerHTML = html;
+}
+
+function playAudio(i){
+  // Stop audio yang lagi jalan
+  if(currentAudio && currentAudio !== document.getElementById("audio"+i)){
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+    document.getElementById("card"+currentIndex).classList.remove("playing");
+  }
+  
+  let audio = document.getElementById("audio"+i);
+  currentAudio = audio;
+  currentIndex = i;
+  
+  audio.play().then(()=>{
+    document.getElementById("card"+i).classList.add("playing");
+    document.getElementById("card"+i).scrollIntoView({behavior:"smooth", block:"center"});
+  }).catch(()=>{
+    alert("Klik tombol play dulu bro, browser blokir autoplay");
+  });
+}
+
+function nextAudio(){
+  document.getElementById("card"+currentIndex).classList.remove("playing");
+  let next = currentIndex + 1;
+  if(next < asmaul.length){
+    playAudio(next);
+  }else{
+    currentAudio = null;
+    currentIndex = -1;
+  }
+}
+
+renderList();
+</script>
+
+</body>
+</html>

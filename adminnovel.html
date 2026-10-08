@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FizzoKW Admin Panel</title>
+<style>
+:root{
+  --p:#FF6B00;--bg:#0f0f0f;--card:#1a1a1a;--text:#e5e5e5;--border:#333;--text2:#aaa;--gold:#FFD700;--red:#E53935;--green:#4CAF50;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+body{background:var(--bg);color:var(--text);padding:20px}
+.hide{display:none!important}
+.container{max-width:900px;margin:0 auto;background:var(--card);padding:20px;border-radius:12px;border:1px solid var(--border);margin-bottom:20px}
+h2,h3{color:var(--gold);margin-bottom:20px;display:flex;align-items:center;gap:8px}
+input,select,button,textarea{width:100%;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;margin:6px 0}
+button{background:var(--p);color:#fff;border:none;font-weight:700;cursor:pointer}
+button:hover{opacity:0.9}
+.btn-gold{background:var(--gold);color:#000}
+.btn-red{background:var(--red)}
+.btn-green{background:var(--green)}
+.user-info,.novel-info{background:var(--bg);padding:15px;border-radius:8px;margin:15px 0;border:1px solid var(--border)}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#333;padding:10px 20px;border-radius:8px;z-index:10000;color:#fff;font-size:14px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.logout-btn{width:auto;padding:8px 16px;background:var(--red);font-size:13px}
+.tab-nav{display:flex;gap:10px;margin-bottom:20px;border-bottom:1px solid var(--border)}
+.tab{padding:10px 20px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent}
+.tab.active{color:var(--p);border-bottom-color:var(--p)}
+.table{width:100%;border-collapse:collapse}
+.table th,.table td{padding:10px;text-align:left;border-bottom:1px solid var(--border)}
+.table th{color:var(--gold)}
+.chapter-row{display:flex;gap:10px;align-items:center;margin:8px 0;padding:10px;background:var(--bg);border-radius:8px}
+.chapter-row input{margin:0}
+.chapter-row button{width:auto;padding:8px 16px}
+.badge{padding:4px 8px;border-radius:4px;font-size:12px;font-weight:700}
+.badge-free{background:var(--green);color:#fff}
+.badge-paid{background:var(--red);color:#fff}
+</style>
+</head>
+<body>
+
+<div id="loginBox" class="container">
+  <h2>👑 FizzoKW Admin Login</h2>
+  <input type="email" id="adminEmail" placeholder="Email Admin">
+  <input type="password" id="adminPass" placeholder="Password">
+  <button onclick="adminLogin()">LOGIN</button>
+</div>
+
+<div id="adminPanel" class="container hide">
+  <div class="header">
+    <h2>👑 Panel Admin</h2>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+
+  <div class="tab-nav">
+    <div class="tab active" onclick="switchTab('user')">Manage User</div>
+    <div class="tab" onclick="switchTab('novel')">Manage Novel</div>
+  </div>
+
+  <!-- TAB USER -->
+  <div id="tab-user">
+    <input type="text" id="userSearch" placeholder="Masukkan Email atau UID user">
+    <button onclick="searchUser()">Cari User</button>
+
+    <div id="userInfo" class="user-info hide">
+      <p><strong>Nama:</strong> <span id="userName"></span></p>
+      <p><strong>Email:</strong> <span id="userEmail"></span></p>
+      <p><strong>UID:</strong> <span id="userUID"></span></p>
+      <p><strong>Koin Sekarang:</strong> <span id="userCoins">0</span> 🪙</p>
+
+      <input type="number" id="coinAmount" placeholder="Jumlah koin" min="1">
+      <button class="btn-gold" onclick="addCoins()">+ Tambah Koin</button>
+      <button class="btn-red" onclick="removeCoins()">- Kurangi Koin</button>
+    </div>
+  </div>
+
+  <!-- TAB NOVEL -->
+  <div id="tab-novel" class="hide">
+    <h3>📚 Daftar Novel</h3>
+    <div id="novelList"></div>
+
+    <div id="chapterManager" class="hide">
+      <h3>📖 Manage Bab: <span id="manageNovelTitle"></span></h3>
+      <div id="chapterList"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { getFirestore, doc, getDoc, updateDoc, query, collection, where, getDocs, increment, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBIHI_f0aXdB1-tMrGFXlzA8rrpPk-zjIk",
+    authDomain: "ummat-4864f.firebaseapp.com",
+    databaseURL: "https://ummat-4864f-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "ummat-4864f",
+    storageBucket: "ummat-4864f.firebasestorage.app",
+    messagingSenderId: "703286280572",
+    appId: "1:703286280572:web:06385d185b6457b8a664f9",
+    measurementId: "G-2QRE5V1D3B"
+  };
+
+  const ADMIN_EMAIL = "titikia123@gmail.com"; // GANTI JADI EMAIL LU
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let selectedUserId = null;
+  let selectedNovelId = null;
+
+  onAuthStateChanged(auth, (user) => {
+    if(user){
+      if(user.email!== ADMIN_EMAIL){
+        toast('Akses ditolak! Bukan admin');
+        signOut(auth);
+        return;
+      }
+      document.getElementById('loginBox').classList.add('hide');
+      document.getElementById('adminPanel').classList.remove('hide');
+      loadNovels();
+    }
+  });
+
+  window.adminLogin = async () => {
+    try{
+      await signInWithEmailAndPassword(auth, adminEmail.value, adminPass.value);
+    }catch(e){ toast('Login gagal: '+e.message) }
+  }
+
+  window.logout = () => signOut(auth);
+
+  window.switchTab = (tab) => {
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+    document.getElementById('tab-user').classList.toggle('hide', tab!=='user');
+    document.getElementById('tab-novel').classList.toggle('hide', tab!=='novel');
+  }
+
+  // ========== USER MANAGEMENT ==========
+  window.searchUser = async () => {
+    const search = document.getElementById('userSearch').value.trim();
+    if(!search) return toast('Masukkan email atau UID');
+
+    try{
+      let userDoc = await getDoc(doc(db, "users", search));
+
+      if(!userDoc.exists()){
+        const q = query(collection(db, "users"), where("email", "==", search));
+        const snap = await getDocs(q);
+        if(!snap.empty){
+          userDoc = snap.docs[0];
+        }
+      }
+
+      if(!userDoc.exists()) return toast('User ga ketemu');
+
+      selectedUserId = userDoc.id;
+      const data = userDoc.data();
+
+      document.getElementById('userInfo').classList.remove('hide');
+      document.getElementById('userName').textContent = data.nama || '-';
+      document.getElementById('userEmail').textContent = data.email || '-';
+      document.getElementById('userUID').textContent = selectedUserId;
+      document.getElementById('userCoins').textContent = data.coins || 0;
+
+    }catch(e){ toast('Error: '+e.message) }
+  }
+
+  window.addCoins = async () => {
+    if(!selectedUserId) return toast('Cari user dulu');
+    const amount = parseInt(document.getElementById('coinAmount').value);
+    if(!amount || amount <= 0) return toast('Masukkan jumlah koin yang valid');
+
+    try{
+      await updateDoc(doc(db, "users", selectedUserId), {
+        coins: increment(amount)
+      });
+      toast(`Berhasil tambah ${amount} koin!`);
+      document.getElementById('coinAmount').value = '';
+      searchUser();
+    }catch(e){ toast('Gagal: '+e.message) }
+  }
+
+  window.removeCoins = async () => {
+    if(!selectedUserId) return toast('Cari user dulu');
+    const amount = parseInt(document.getElementById('coinAmount').value);
+    if(!amount || amount <= 0) return toast('Masukkan jumlah koin yang valid');
+
+    try{
+      await updateDoc(doc(db, "users", selectedUserId), {
+        coins: increment(-amount)
+      });
+      toast(`Berhasil kurangi ${amount} koin!`);
+      document.getElementById('coinAmount').value = '';
+      searchUser();
+    }catch(e){ toast('Gagal: '+e.message) }
+  }
+
+  // ========== NOVEL MANAGEMENT ==========
+  async function loadNovels(){
+    const q = query(collection(db, "novels"), orderBy("createdAt", "desc"));
+    const snap = await getDocs(q);
+    const list = document.getElementById('novelList');
+    
+    if(snap.empty){
+      list.innerHTML = '<p>Belum ada novel</p>';
+      return;
+    }
+
+    let html = '<table class="table"><tr><th>Judul</th><th>Penulis</th><th>Bab</th><th>Aksi</th></tr>';
+    snap.forEach(doc=>{
+      const n = doc.data();
+      html += `<tr>
+        <td>${n.judul}</td>
+        <td>${n.penulis}</td>
+        <td>${n.totalBab || 0}</td>
+        <td><button onclick="manageChapters('${doc.id}','${n.judul}')">Manage Bab</button></td>
+      </tr>`;
+    });
+    html += '</table>';
+    list.innerHTML = html;
+  }
+
+  window.manageChapters = async (novelId, title) => {
+    selectedNovelId = novelId;
+    document.getElementById('chapterManager').classList.remove('hide');
+    document.getElementById('manageNovelTitle').textContent = title;
+
+    const snap = await getDocs(query(collection(db, "novels", novelId, "chapters"), orderBy("nomor")));
+    const list = document.getElementById('chapterList');
+    
+    let html = '';
+    snap.forEach(doc=>{
+      const c = doc.data();
+      html += `
+        <div class="chapter-row">
+          <div style="flex:1">
+            <strong>Bab ${c.nomor}: ${c.judul}</strong>
+            <div style="margin-top:5px">
+              <span class="badge ${c.isPaid? 'badge-paid' : 'badge-free'}">
+                ${c.isPaid? 'Premium' : 'Gratis'}
+              </span>
+              ${c.isPaid? `<span style="color:var(--gold);margin-left:10px">${c.price} koin</span>` : ''}
+            </div>
+          </div>
+          <input type="number" id="price_${doc.id}" placeholder="Harga" value="${c.price || 0}" style="width:100px">
+          <button class="btn-green" onclick="setFree('${doc.id}')">Gratis</button>
+          <button class="btn-gold" onclick="setPaid('${doc.id}')">Premium</button>
+        </div>
+      `;
+    });
+    list.innerHTML = html;
+  }
+
+  window.setFree = async (chapterId) => {
+    try{
+      await updateDoc(doc(db, "novels", selectedNovelId, "chapters", chapterId), {
+        isPaid: false,
+        price: 0
+      });
+      toast('Bab jadi gratis');
+      manageChapters(selectedNovelId, document.getElementById('manageNovelTitle').textContent);
+    }catch(e){ toast('Gagal: '+e.message) }
+  }
+
+  window.setPaid = async (chapterId) => {
+    const price = parseInt(document.getElementById(`price_${chapterId}`).value);
+    if(!price || price <= 0) return toast('Masukkan harga valid');
+
+    try{
+      await updateDoc(doc(db, "novels", selectedNovelId, "chapters", chapterId), {
+        isPaid: true,
+        price: price
+      });
+      toast(`Bab jadi premium ${price} koin`);
+      manageChapters(selectedNovelId, document.getElementById('manageNovelTitle').textContent);
+    }catch(e){ toast('Gagal: '+e.message) }
+  }
+
+  function toast(msg){
+    const t = document.createElement('div');
+    t.className = 'toast'; t.textContent = msg; document.body.appendChild(t);
+    setTimeout(()=>t.remove(),2000);
+  }
+</script>
+</body>
+</html>

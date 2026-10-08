@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Reelo — Video Pendek</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Archivo:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+
+:root{
+  --cream:#F7F3EC;
+  --cream2:#EFE9DC;
+  --ink:#1A1815;
+  --ink2:#3A3631;
+  --red:#D8472B;
+  --mustard:#E8B339;
+  --line:rgba(26,24,21,0.12);
+  --line2:rgba(26,24,21,0.22);
+  --white:#FFFDF9;
+  --r:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--ink);font-family:'Archivo',sans-serif;color:var(--ink)}
+
+/* ════════ APP SHELL ════════ */
+#app{position:fixed;inset:0;background:var(--ink);display:flex;flex-direction:column}
+
+/* ════════ TOP BAR ════════ */
+.topbar{
+  position:absolute;top:0;left:0;right:0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 18px;
+}
+.brand{
+  font-family:'Fraunces',serif;font-weight:900;font-size:22px;
+  color:var(--cream);letter-spacing:-0.5px;
+  text-shadow:0 1px 8px rgba(0,0,0,0.3);
+}
+.brand .dot{color:var(--mustard)}
+.top-actions{display:flex;gap:10px}
+.icon-pill{
+  width:38px;height:38px;border-radius:50%;
+  background:rgba(247,243,236,0.16);backdrop-filter:blur(6px);
+  border:1px solid rgba(247,243,236,0.25);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+
+/* ════════ FEED ════════ */
+#feed{
+  flex:1;overflow-y:scroll;scroll-snap-type:y mandatory;
+  scrollbar-width:none;
+}
+#feed::-webkit-scrollbar{display:none}
+
+.slide{
+  position:relative;width:100%;height:100%;
+  scroll-snap-align:start;scroll-snap-stop:always;
+  display:flex;align-items:center;justify-content:center;
+  background:#0E0D0B;overflow:hidden;
+}
+.slide video{
+  width:100%;height:100%;object-fit:cover;
+}
+
+/* paper-frame vignette so it doesn't feel like generic edge-to-edge dark video */
+.slide::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, transparent 18%, transparent 60%, rgba(0,0,0,0.55) 100%);
+}
+
+/* ── CAPTION CARD (paper card floating bottom-left) ── */
+.cap-card{
+  position:absolute;left:16px;right:88px;bottom:108px;z-index:30;
+}
+.cap-creator{
+  display:flex;align-items:center;gap:8px;margin-bottom:8px;
+}
+.cap-avatar{
+  width:34px;height:34px;border-radius:50%;
+  background:var(--mustard);display:flex;align-items:center;justify-content:center;
+  font-family:'Fraunces',serif;font-weight:700;font-size:15px;color:var(--ink);
+  border:2px solid var(--cream);flex-shrink:0;
+}
+.cap-name{color:var(--white);font-weight:700;font-size:14.5px;text-shadow:0 1px 4px rgba(0,0,0,0.4)}
+.follow-chip{
+  padding:3px 12px;border-radius:20px;border:1.5px solid var(--white);
+  background:transparent;color:var(--white);font-size:11px;font-weight:700;
+  letter-spacing:0.5px;cursor:pointer;text-transform:uppercase;
+}
+.follow-chip.following{background:var(--white);color:var(--ink)}
+.cap-text{
+  color:var(--cream);font-size:14px;line-height:1.5;
+  text-shadow:0 1px 6px rgba(0,0,0,0.4);
+  max-height:60px;overflow:hidden;
+}
+.cap-tag{color:var(--mustard);font-weight:700}
+
+/* ── RIGHT ACTION RAIL ── */
+.rail{
+  position:absolute;right:12px;bottom:108px;z-index:30;
+  display:flex;flex-direction:column;align-items:center;gap:20px;
+}
+.rail-btn{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  cursor:pointer;background:none;border:none;
+}
+.rail-icon-wrap{
+  width:48px;height:48px;border-radius:50%;
+  background:rgba(26,24,21,0.35);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform 0.15s;
+}
+.rail-btn:active .rail-icon-wrap{transform:scale(0.88)}
+.rail-icon-wrap.liked{background:var(--red)}
+.rail-label{
+  color:var(--white);font-size:11.5px;font-weight:700;
+  text-shadow:0 1px 4px rgba(0,0,0,0.4);font-family:'Space Mono',monospace;
+}
+
+/* ── PROGRESS DOTS (left edge, paper-ish) ── */
+.progress-rail{
+  position:absolute;left:6px;top:50%;transform:translateY(-50%);
+  z-index:25;display:flex;flex-direction:column;gap:5px;
+}
+.progress-dot{width:3px;height:14px;border-radius:2px;background:rgba(255,255,255,0.25)}
+.progress-dot.active{background:var(--mustard);height:22px}
+
+/* ── EMPTY STATE ── */
+.empty-state{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:16px;
+  background:var(--cream);color:var(--ink);text-align:center;padding:40px;
+}
+.empty-state h2{font-family:'Fraunces',serif;font-weight:900;font-size:26px}
+.empty-state p{color:var(--ink2);font-size:14px;max-width:280px;line-height:1.6}
+
+/* ── LOADING ── */
+.loading-state{
+  position:absolute;inset:0;display:flex;flex-direction:column;gap:14px;
+  align-items:center;justify-content:center;background:var(--ink);color:var(--cream);
+}
+.spinner{
+  width:36px;height:36px;border-radius:50%;
+  border:3px solid rgba(247,243,236,0.2);border-top-color:var(--mustard);
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ════════ BOTTOM NAV ════════ */
+.bottom-nav{
+  position:absolute;bottom:0;left:0;right:0;z-index:50;
+  background:linear-gradient(to top, rgba(26,24,21,0.85), transparent 100%);
+  padding:14px 24px 18px;
+  display:flex;align-items:center;justify-content:space-around;
+}
+.nav-item{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  cursor:pointer;background:none;border:none;color:rgba(247,243,236,0.55);
+}
+.nav-item.active{color:var(--cream)}
+.nav-label{font-size:10.5px;font-weight:700;font-family:'Space Mono',monospace;letter-spacing:0.3px}
+.upload-fab{
+  width:46px;height:32px;border-radius:9px;
+  background:var(--red);display:flex;align-items:center;justify-content:center;
+  margin-top:-2px;box-shadow:0 4px 14px rgba(216,71,43,0.45);
+}
+
+/* ════════ UPLOAD MODAL ════════ */
+.modal-bg{
+  display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(26,24,21,0.7);backdrop-filter:blur(4px);
+  align-items:flex-end;justify-content:center;
+}
+.modal-bg.open{display:flex}
+.upload-sheet{
+  background:var(--cream);width:100%;max-width:520px;
+  border-radius:24px 24px 0 0;padding:24px 22px 28px;
+  max-height:88vh;overflow-y:auto;
+}
+.sheet-handle{width:36px;height:4px;background:var(--line2);border-radius:2px;margin:0 auto 18px}
+.sheet-title{font-family:'Fraunces',serif;font-weight:900;font-size:24px;margin-bottom:4px}
+.sheet-sub{color:var(--ink2);font-size:13px;margin-bottom:20px}
+
+.drop-zone{
+  border:2px dashed var(--line2);border-radius:16px;
+  padding:32px 16px;text-align:center;cursor:pointer;
+  margin-bottom:18px;background:var(--white);transition:border-color 0.2s;
+}
+.drop-zone.has-file{border-color:var(--red);border-style:solid}
+.drop-zone svg{margin-bottom:10px}
+.drop-zone p{font-size:13px;color:var(--ink2);font-weight:600}
+.drop-zone .file-name{color:var(--red);font-size:12px;margin-top:6px;word-break:break-all}
+
+.preview-video{
+  width:100%;max-height:280px;border-radius:14px;
+  margin-bottom:18px;background:#000;display:none;object-fit:contain;
+}
+
+.field-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink2);margin-bottom:6px;display:block}
+.field-input{
+  width:100%;padding:13px 14px;border:1.5px solid var(--line2);
+  border-radius:12px;background:var(--white);font-family:'Archivo',sans-serif;
+  font-size:14px;color:var(--ink);margin-bottom:16px;outline:none;
+}
+.field-input:focus{border-color:var(--red)}
+textarea.field-input{resize:none;height:70px}
+
+.upload-btn{
+  width:100%;padding:16px;border-radius:14px;border:none;
+  background:var(--ink);color:var(--cream);font-weight:800;
+  font-size:15px;cursor:pointer;font-family:'Archivo',sans-serif;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.upload-btn:disabled{background:var(--line2);color:var(--ink2);cursor:not-allowed}
+
+.progress-wrap{display:none;margin-top:16px}
+.progress-track{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:var(--red);width:0%;transition:width 0.2s;border-radius:3px}
+.progress-text{font-size:12px;color:var(--ink2);margin-top:8px;text-align:center;font-family:'Space Mono',monospace}
+
+/* ════════ COMMENTS PANEL ════════ */
+.comments-panel{
+  display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(26,24,21,0.6);backdrop-filter:blur(3px);
+  align-items:flex-end;justify-content:center;
+}
+.comments-panel.open{display:flex}
+.comments-sheet{
+  background:var(--cream);width:100%;max-width:520px;height:72vh;
+  border-radius:24px 24px 0 0;display:flex;flex-direction:column;
+}
+.comments-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 20px 14px;border-bottom:1px solid var(--line);
+}
+.comments-head h3{font-family:'Fraunces',serif;font-weight:800;font-size:18px}
+.close-x{width:30px;height:30px;border-radius:50%;background:var(--line);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.comments-list{flex:1;overflow-y:auto;padding:14px 20px}
+.comment-item{display:flex;gap:10px;margin-bottom:18px}
+.c-avatar{width:32px;height:32px;border-radius:50%;background:var(--mustard);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:700;font-size:13px;flex-shrink:0}
+.c-body{flex:1}
+.c-name{font-size:13px;font-weight:700;margin-bottom:2px}
+.c-text{font-size:13.5px;color:var(--ink2);line-height:1.45}
+.c-time{font-size:11px;color:#999;margin-top:4px;font-family:'Space Mono',monospace}
+.comments-empty{text-align:center;color:var(--ink2);padding:40px 20px;font-size:13px}
+.comments-input-row{
+  display:flex;gap:10px;padding:14px 16px;border-top:1px solid var(--line);
+  background:var(--white);
+}
+.comments-input-row input{
+  flex:1;border:1.5px solid var(--line2);border-radius:24px;
+  padding:11px 16px;font-size:13.5px;outline:none;font-family:'Archivo',sans-serif;
+}
+.comments-input-row input:focus{border-color:var(--red)}
+.send-btn{
+  width:44px;height:44px;border-radius:50%;background:var(--ink);border:none;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;
+}
+
+/* ════════ NAME PROMPT ════════ */
+.name-prompt-bg{
+  display:none;position:fixed;inset:0;z-index:300;
+  background:rgba(26,24,21,0.75);backdrop-filter:blur(4px);
+  align-items:center;justify-content:center;padding:24px;
+}
+.name-prompt-bg.open{display:flex}
+.name-card{
+  background:var(--cream);border-radius:20px;padding:28px 24px;width:100%;max-width:340px;
+}
+.name-card h3{font-family:'Fraunces',serif;font-weight:900;font-size:20px;margin-bottom:8px}
+.name-card p{font-size:13px;color:var(--ink2);margin-bottom:18px;line-height:1.5}
+
+/* ════════ TOAST ════════ */
+.toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:var(--cream);padding:11px 22px;border-radius:24px;
+  font-size:13px;font-weight:600;z-index:999;opacity:0;pointer-events:none;
+  transition:opacity 0.3s;white-space:nowrap;
+}
+.toast.show{opacity:1}
+
+/* ════════ REPORT ════════ */
+.report-menu{
+  position:absolute;z-index:60;background:var(--white);border-radius:14px;
+  box-shadow:0 8px 30px rgba(0,0,0,0.25);padding:6px;display:none;min-width:160px;
+}
+.report-menu.open{display:block}
+.report-item{
+  padding:11px 14px;font-size:13px;cursor:pointer;border-radius:10px;
+  display:flex;align-items:center;gap:8px;color:var(--ink);
+}
+.report-item:hover{background:var(--cream2)}
+.report-item.danger{color:var(--red)}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="brand">REELO<span class="dot">.</span></div>
+    <div class="top-actions">
+      <button class="icon-pill" onclick="openNamePrompt()" title="Profil">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F7F3EC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- FEED -->
+  <div id="feed">
+    <div class="loading-state" id="loading-state">
+      <div class="spinner"></div>
+      <p style="font-family:'Space Mono',monospace;font-size:12px;color:rgba(247,243,236,0.6)">Memuat video...</p>
+    </div>
+  </div>
+
+  <!-- PROGRESS RAIL -->
+  <div class="progress-rail" id="progress-rail"></div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <button class="nav-item active" onclick="toast('Kamu di Beranda')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="nav-label">BERANDA</span>
+    </button>
+    <button class="nav-item" onclick="document.getElementById('upload-modal').classList.add('open')">
+      <div class="upload-fab">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F7F3EC" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </div>
+    </button>
+    <button class="nav-item" onclick="openNamePrompt()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="nav-label">SAYA</span>
+    </button>
+  </div>
+</div>
+
+<!-- UPLOAD MODAL -->
+<div class="modal-bg" id="upload-modal">
+  <div class="upload-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Unggah Video</div>
+    <div class="sheet-sub">Bagikan video pendekmu ke semua orang di Reelo.</div>
+
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#3A3631" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      <p id="drop-text">Ketuk untuk pilih video</p>
+      <div class="file-name" id="file-name-display"></div>
+    </div>
+    <input type="file" id="file-input" accept="video/*" style="display:none" onchange="handleFileSelect(event)">
+
+    <video class="preview-video" id="preview-video" controls></video>
+
+    <label class="field-label">Nama Kamu</label>
+    <input type="text" class="field-input" id="creator-name-input" placeholder="Misal: Budi Kreatif" maxlength="30">
+
+    <label class="field-label">Keterangan</label>
+    <textarea class="field-input" id="caption-input" placeholder="Tulis caption video kamu..." maxlength="150"></textarea>
+
+    <button class="upload-btn" id="upload-submit-btn" onclick="submitUpload()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F7F3EC" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Unggah Sekarang
+    </button>
+
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-text" id="progress-text">Mengunggah... 0%</div>
+    </div>
+  </div>
+</div>
+
+<!-- COMMENTS PANEL -->
+<div class="comments-panel" id="comments-panel">
+  <div class="comments-sheet">
+    <div class="comments-head">
+      <h3>Komentar</h3>
+      <button class="close-x" onclick="closeComments()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A1815" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="comments-list" id="comments-list"></div>
+    <div class="comments-input-row">
+      <input type="text" id="comment-input" placeholder="Tulis komentar..." maxlength="200" onkeypress="if(event.key==='Enter')sendComment()">
+      <button class="send-btn" onclick="sendComment()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F7F3EC" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- NAME PROMPT -->
+<div class="name-prompt-bg" id="name-prompt">
+  <div class="name-card">
+    <h3>Siapa Nama Kamu?</h3>
+    <p>Nama ini akan muncul di video, komentar, dan saat orang follow kamu. Tersimpan di HP ini saja.</p>
+    <input type="text" class="field-input" id="global-name-input" placeholder="Nama kamu..." maxlength="30" style="margin-bottom:14px">
+    <button class="upload-btn" onclick="saveGlobalName()">Simpan</button>
+  </div>
+</div>
+
+<div class="toast" id="toast-el"></div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, getDocs, doc, updateDoc, increment,
+  query, orderBy, limit, onSnapshot, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDNoe_lN1jRKVxn7U3LDIetaKuEwG-4JB0",
+  authDomain: "apptiktok-2a830.firebaseapp.com",
+  databaseURL: "https://apptiktok-2a830-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "apptiktok-2a830",
+  storageBucket: "apptiktok-2a830.firebasestorage.app",
+  messagingSenderId: "300867787359",
+  appId: "1:300867787359:web:5cecb3e3270905e92819ea",
+  measurementId: "G-1HRNMPFTB2"
+};
+
+// ════════════════════════════════════════════════════
+// 🔧 ISI BAGIAN INI DENGAN DATA CLOUDINARY KAMU
+// Lihat panduan lengkap di file CLOUDINARY-SETUP.md
+// ════════════════════════════════════════════════════
+const CLOUDINARY_CLOUD_NAME = "de51aluvq";
+const CLOUDINARY_UPLOAD_PRESET = "video_unsigned";
+const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`;
+// ════════════════════════════════════════════════════
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ── GLOBAL STATE ──
+let myId = localStorage.getItem('reelo_uid') || ('u_' + Math.random().toString(36).slice(2,10));
+localStorage.setItem('reelo_uid', myId);
+let myName = localStorage.getItem('reelo_name') || '';
+let likedVideos = JSON.parse(localStorage.getItem('reelo_liked') || '[]');
+let followedCreators = JSON.parse(localStorage.getItem('reelo_followed') || '[]');
+let videos = [];
+let currentVideoId = null;
+let selectedFile = null;
+let observer = null;
+
+window.myId = myId;
+
+// ── NAME PROMPT ──
+window.openNamePrompt = function(){
+  document.getElementById('global-name-input').value = myName;
+  document.getElementById('name-prompt').classList.add('open');
+}
+window.saveGlobalName = function(){
+  const val = document.getElementById('global-name-input').value.trim();
+  if(!val){ toast('Isi nama dulu ya'); return; }
+  myName = val;
+  localStorage.setItem('reelo_name', myName);
+  document.getElementById('name-prompt').classList.remove('open');
+  toast('Nama disimpan: ' + myName);
+}
+
+// ── TOAST ──
+window.toast = function(msg, dur=2200){
+  const t = document.getElementById('toast-el');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(()=>t.classList.remove('show'), dur);
+}
+
+// ── LOAD VIDEOS (realtime) ──
+const feedEl = document.getElementById('feed');
+
+function initFeedListener(){
+  const q = query(collection(db, 'videos'), orderBy('createdAt', 'desc'), limit(50));
+  onSnapshot(q, (snap) => {
+    const prevCount = videos.length;
+    videos = [];
+    snap.forEach(d => videos.push({ id: d.id, ...d.data() }));
+    renderFeed(prevCount === 0);
+  }, (err) => {
+    console.error(err);
+    document.getElementById('loading-state').innerHTML =
+      '<div class="empty-state" style="position:relative;background:transparent;color:#F7F3EC"><h2 style="color:#F7F3EC">Gagal memuat</h2><p style="color:rgba(247,243,236,0.7)">Periksa koneksi internet kamu, lalu muat ulang halaman.</p></div>';
+  });
+}
+
+function renderFeed(isFirstLoad){
+  document.getElementById('loading-state').remove ? null : null;
+  const loadingEl = document.getElementById('loading-state');
+  if(loadingEl) loadingEl.style.display = 'none';
+
+  if(videos.length === 0){
+    feedEl.innerHTML = `
+      <div class="empty-state">
+        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#1A1815" stroke-width="1.4"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        <h2>Belum Ada Video</h2>
+        <p>Jadilah yang pertama mengunggah video di Reelo. Ketuk tombol + di bawah.</p>
+      </div>`;
+    document.getElementById('progress-rail').innerHTML = '';
+    return;
+  }
+
+  feedEl.innerHTML = videos.map((v, i) => buildSlideHTML(v, i)).join('');
+
+  // progress dots
+  document.getElementById('progress-rail').innerHTML =
+    videos.map((_, i) => `<div class="progress-dot ${i===0?'active':''}" data-idx="${i}"></div>`).join('');
+
+  setupIntersectionObserver();
+  setupScrollProgress();
+
+  if(isFirstLoad && videos[0]) currentVideoId = videos[0].id;
+}
+
+function initials(name){
+  return (name||'?').trim().slice(0,1).toUpperCase();
+}
+
+function buildSlideHTML(v, idx){
+  const liked = likedVideos.includes(v.id);
+  const following = followedCreators.includes(v.creatorId);
+  const likeCount = v.likes || 0;
+  const commentCount = v.commentCount || 0;
+  const isOwner = v.creatorId === myId;
+
+  return `
+  <div class="slide" data-id="${v.id}" data-idx="${idx}">
+    <video src="${v.videoUrl}" loop playsinline preload="metadata" onclick="togglePlayPause(this)"></video>
+
+    <div class="cap-card">
+      <div class="cap-creator">
+        <div class="cap-avatar">${initials(v.creatorName)}</div>
+        <div class="cap-name">${escapeHtml(v.creatorName||'Anonim')}</div>
+        ${!isOwner ? `<button class="follow-chip ${following?'following':''}" onclick="toggleFollow('${v.creatorId}','${escapeAttr(v.creatorName)}',this)">${following?'Mengikuti':'Ikuti'}</button>` : ''}
+      </div>
+      <div class="cap-text">${escapeHtml(v.caption||'')}</div>
+    </div>
+
+    <div class="rail">
+      <button class="rail-btn" onclick="toggleLike('${v.id}',this)">
+        <div class="rail-icon-wrap ${liked?'liked':''}" id="like-wrap-${v.id}">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="${liked?'#fff':'none'}" stroke="#fff" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </div>
+        <div class="rail-label" id="like-count-${v.id}">${likeCount}</div>
+      </button>
+
+      <button class="rail-btn" onclick="openComments('${v.id}')">
+        <div class="rail-icon-wrap">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        </div>
+        <div class="rail-label" id="comment-count-${v.id}">${commentCount}</div>
+      </button>
+
+      <button class="rail-btn" onclick="shareVideo('${v.id}')">
+        <div class="rail-icon-wrap">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </div>
+        <div class="rail-label">Bagikan</div>
+      </button>
+
+      <button class="rail-btn" onclick="openReportMenu('${v.id}', ${isOwner})">
+        <div class="rail-icon-wrap">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </div>
+      </button>
+    </div>
+  </div>`;
+}
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+function escapeAttr(s){
+  return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+}
+
+// ── AUTOPLAY ON SCROLL ──
+function setupIntersectionObserver(){
+  if(observer) observer.disconnect();
+  const slides = document.querySelectorAll('.slide');
+  observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const vid = entry.target.querySelector('video');
+      if(!vid) return;
+      if(entry.isIntersecting && entry.intersectionRatio > 0.6){
+        vid.play().catch(()=>{});
+        currentVideoId = entry.target.dataset.id;
+        document.querySelectorAll('.progress-dot').forEach(d => d.classList.remove('active'));
+        const dot = document.querySelector(`.progress-dot[data-idx="${entry.target.dataset.idx}"]`);
+        if(dot) dot.classList.add('active');
+      } else {
+        vid.pause();
+      }
+    });
+  }, { threshold: [0.6] });
+  slides.forEach(s => observer.observe(s));
+}
+
+function setupScrollProgress(){
+  // dots already wired via observer
+}
+
+window.togglePlayPause = function(vid){
+  if(vid.paused) vid.play(); else vid.pause();
+}
+
+// ── LIKE ──
+window.toggleLike = async function(videoId, btn){
+  const wrap = document.getElementById(`like-wrap-${videoId}`);
+  const countEl = document.getElementById(`like-count-${videoId}`);
+  const idx = likedVideos.indexOf(videoId);
+  const videoRef = doc(db, 'videos', videoId);
+
+  if(idx >= 0){
+    likedVideos.splice(idx, 1);
+    wrap.classList.remove('liked');
+    wrap.querySelector('svg').setAttribute('fill','none');
+    countEl.textContent = Math.max(0, (parseInt(countEl.textContent)||1) - 1);
+    try{ await updateDoc(videoRef, { likes: increment(-1) }); }catch(e){}
+  } else {
+    likedVideos.push(videoId);
+    wrap.classList.add('liked');
+    wrap.querySelector('svg').setAttribute('fill','#fff');
+    countEl.textContent = (parseInt(countEl.textContent)||0) + 1;
+    wrap.style.transform = 'scale(1.2)';
+    setTimeout(()=>wrap.style.transform='scale(1)', 150);
+    try{ await updateDoc(videoRef, { likes: increment(1) }); }catch(e){}
+  }
+  localStorage.setItem('reelo_liked', JSON.stringify(likedVideos));
+}
+
+// ── FOLLOW ──
+window.toggleFollow = function(creatorId, creatorName, btn){
+  if(!myName){ openNamePrompt(); toast('Isi nama kamu dulu untuk follow'); return; }
+  const idx = followedCreators.indexOf(creatorId);
+  if(idx >= 0){
+    followedCreators.splice(idx, 1);
+    btn.classList.remove('following');
+    btn.textContent = 'Ikuti';
+    toast('Berhenti mengikuti ' + creatorName);
+  } else {
+    followedCreators.push(creatorId);
+    btn.classList.add('following');
+    btn.textContent = 'Mengikuti';
+    toast('Mengikuti ' + creatorName);
+  }
+  localStorage.setItem('reelo_followed', JSON.stringify(followedCreators));
+}
+
+// ── SHARE ──
+window.shareVideo = async function(videoId){
+  const v = videos.find(x => x.id === videoId);
+  if(!v) return;
+  if(navigator.share){
+    try{ await navigator.share({ title: 'Reelo', text: v.caption || 'Lihat video ini di Reelo', url: v.videoUrl }); }
+    catch(e){}
+  } else {
+    try{
+      await navigator.clipboard.writeText(v.videoUrl);
+      toast('Link video disalin!');
+    }catch(e){ toast('Tidak bisa membagikan'); }
+  }
+}
+
+// ── REPORT MENU ──
+window.openReportMenu = async function(videoId, isOwner){
+  if(isOwner){
+    if(confirm('Hapus video ini?')){
+      try{
+        await deleteDoc(doc(db, 'videos', videoId));
+        toast('Video dihapus');
+      }catch(e){ toast('Gagal menghapus'); }
+    }
+  } else {
+    if(confirm('Laporkan video ini sebagai tidak pantas?')){
+      try{
+        await updateDoc(doc(db, 'videos', videoId), { reports: increment(1) });
+        toast('Terima kasih, video sudah dilaporkan');
+      }catch(e){ toast('Gagal melaporkan'); }
+    }
+  }
+}
+
+// ── COMMENTS ──
+let commentsUnsub = null;
+window.openComments = function(videoId){
+  currentVideoId = videoId;
+  document.getElementById('comments-panel').classList.add('open');
+  document.getElementById('comments-list').innerHTML = '<p style="text-align:center;color:#999;padding:20px;font-size:13px">Memuat komentar...</p>';
+
+  if(commentsUnsub) commentsUnsub();
+  const q = query(collection(db, 'videos', videoId, 'comments'), orderBy('createdAt', 'desc'), limit(100));
+  commentsUnsub = onSnapshot(q, (snap) => {
+    const list = document.getElementById('comments-list');
+    if(snap.empty){
+      list.innerHTML = '<div class="comments-empty">Belum ada komentar.<br>Jadilah yang pertama berkomentar!</div>';
+      return;
+    }
+    let html = '';
+    snap.forEach(d => {
+      const c = d.data();
+      html += `
+        <div class="comment-item">
+          <div class="c-avatar">${initials(c.name)}</div>
+          <div class="c-body">
+            <div class="c-name">${escapeHtml(c.name||'Anonim')}</div>
+            <div class="c-text">${escapeHtml(c.text)}</div>
+          </div>
+        </div>`;
+    });
+    list.innerHTML = html;
+  });
+}
+window.closeComments = function(){
+  document.getElementById('comments-panel').classList.remove('open');
+  if(commentsUnsub){ commentsUnsub(); commentsUnsub = null; }
+}
+
+window.sendComment = async function(){
+  const input = document.getElementById('comment-input');
+  const text = input.value.trim();
+  if(!text) return;
+  if(!myName){ openNamePrompt(); toast('Isi nama kamu dulu'); return; }
+  if(!currentVideoId) return;
+
+  input.value = '';
+  try{
+    await addDoc(collection(db, 'videos', currentVideoId, 'comments'), {
+      text, name: myName, uid: myId, createdAt: serverTimestamp()
+    });
+    await updateDoc(doc(db, 'videos', currentVideoId), { commentCount: increment(1) });
+    const cEl = document.getElementById(`comment-count-${currentVideoId}`);
+    if(cEl) cEl.textContent = (parseInt(cEl.textContent)||0) + 1;
+  }catch(e){
+    toast('Gagal mengirim komentar');
+  }
+}
+
+// ── UPLOAD ──
+window.handleFileSelect = function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('video/')){ toast('Pilih file video'); return; }
+  if(file.size > 80 * 1024 * 1024){ toast('Video maks 80MB'); return; }
+
+  selectedFile = file;
+  document.getElementById('drop-zone').classList.add('has-file');
+  document.getElementById('drop-text').textContent = 'Video terpilih ✓';
+  document.getElementById('file-name-display').textContent = file.name;
+
+  const url = URL.createObjectURL(file);
+  const pv = document.getElementById('preview-video');
+  pv.src = url; pv.style.display = 'block';
+}
+
+window.submitUpload = async function(){
+  if(!selectedFile){ toast('Pilih video dulu'); return; }
+  const nameInput = document.getElementById('creator-name-input').value.trim();
+  const caption = document.getElementById('caption-input').value.trim();
+
+  if(!nameInput){ toast('Isi nama kamu'); return; }
+
+  if(CLOUDINARY_CLOUD_NAME === 'ISI_CLOUD_NAME_KAMU' || CLOUDINARY_UPLOAD_PRESET === 'ISI_UPLOAD_PRESET_KAMU'){
+    toast('⚠️ Cloudinary belum diisi! Lihat CLOUDINARY-SETUP.md');
+    return;
+  }
+
+  myName = nameInput;
+  localStorage.setItem('reelo_name', myName);
+
+  const btn = document.getElementById('upload-submit-btn');
+  btn.disabled = true;
+  document.getElementById('progress-wrap').style.display = 'block';
+  document.getElementById('progress-fill').style.width = '0%';
+  document.getElementById('progress-text').textContent = 'Mengunggah... 0%';
+
+  try {
+    const videoUrl = await uploadToCloudinary(selectedFile);
+    await addDoc(collection(db, 'videos'), {
+      videoUrl, caption, creatorName: myName, creatorId: myId,
+      likes: 0, commentCount: 0, reports: 0, createdAt: serverTimestamp()
+    });
+    toast('🎉 Video berhasil diunggah!');
+    closeUploadModal();
+  } catch(e) {
+    toast('Gagal mengunggah: ' + (e.message || 'Periksa koneksi'));
+  }
+  btn.disabled = false;
+}
+
+// Upload ke Cloudinary lewat XHR (supaya bisa pantau progress %)
+function uploadToCloudinary(file){
+  return new Promise((resolve, reject) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    formData.append('folder', 'reelo_videos');
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', CLOUDINARY_UPLOAD_URL, true);
+
+    xhr.upload.onprogress = (e) => {
+      if(e.lengthComputable){
+        const pct = Math.round((e.loaded / e.total) * 100);
+        document.getElementById('progress-fill').style.width = pct + '%';
+        document.getElementById('progress-text').textContent = `Mengunggah... ${pct}%`;
+      }
+    };
+
+    xhr.onload = () => {
+      if(xhr.status >= 200 && xhr.status < 300){
+        try{
+          const res = JSON.parse(xhr.responseText);
+          resolve(res.secure_url);
+        }catch(e){ reject(new Error('Respons tidak valid')); }
+      } else {
+        try{
+          const res = JSON.parse(xhr.responseText);
+          reject(new Error(res.error?.message || 'Upload ditolak Cloudinary'));
+        }catch(e){ reject(new Error('Upload gagal (status ' + xhr.status + ')')); }
+      }
+    };
+    xhr.onerror = () => reject(new Error('Koneksi gagal'));
+    xhr.send(formData);
+  });
+}
+
+function closeUploadModal(){
+  document.getElementById('upload-modal').classList.remove('open');
+  document.getElementById('drop-zone').classList.remove('has-file');
+  document.getElementById('drop-text').textContent = 'Ketuk untuk pilih video';
+  document.getElementById('file-name-display').textContent = '';
+  document.getElementById('preview-video').style.display = 'none';
+  document.getElementById('preview-video').src = '';
+  document.getElementById('caption-input').value = '';
+  document.getElementById('progress-wrap').style.display = 'none';
+  document.getElementById('progress-fill').style.width = '0%';
+  selectedFile = null;
+}
+
+// Close modal on backdrop click
+document.getElementById('upload-modal').addEventListener('click', (e) => {
+  if(e.target.id === 'upload-modal') closeUploadModal();
+});
+document.getElementById('comments-panel').addEventListener('click', (e) => {
+  if(e.target.id === 'comments-panel') closeComments();
+});
+document.getElementById('name-prompt').addEventListener('click', (e) => {
+  if(e.target.id === 'name-prompt') document.getElementById('name-prompt').classList.remove('open');
+});
+
+// ── INIT ──
+if(!myName){
+  setTimeout(()=>{ toast('👋 Selamat datang di Reelo!'); }, 500);
+}
+initFeedListener();
+
+</script>
+</body>
+</html>

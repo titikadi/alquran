@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kasir Gudang V6.1 Final</title>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
+<style>
+body{padding:10px;font-family:Arial;background:#f0f2f5;margin:0}
+h1{background:#0B8457;color:white;padding:15px;text-align:center;border-radius:10px;margin:0 0 10px 0}
+button{
+  display:block;width:100%;padding:12px;margin:6px 0;
+  font-size:15px;font-weight:bold;background:#0B8457;color:white;
+  border:none;border-radius:8px;
+}
+button:active{background:#086a45}
+.btn-merah{background:#FF3B30}
+.btn-kuning{background:#FF9500}
+.btn-biru{background:#007AFF}
+.btn-kecil{padding:6px 10px;font-size:12px;width:auto;display:inline-block;margin:2px}
+.box{background:white;padding:15px;border-radius:10px;margin:10px 0;border:2px solid #ddd}
+#hasil{font-size:20px;font-weight:bold;color:#0B8457}
+.item{padding:8px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center}
+input,select{width:100%;padding:10px;margin:6px 0;border:2px solid #ddd;border-radius:8px;font-size:15px}
+.struk{font-family:'Courier New',monospace;font-size:12px;background:#fff9c4;padding:10px;margin-top:10px;border:1px dashed #000;white-space:pre-wrap}
+.tab{display:inline-block;padding:10px 15px;background:#ddd;border:none;border-radius:8px 8px 0 0;font-weight:bold}
+.tab.aktif{background:#0B8457;color:white}
+.flex{display:flex;gap:8px}
+.flex input{margin:0}
+.loading{text-align:center;padding:20px;color:#666}
+.paging{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.paging button{width:auto;padding:8px 15px}
+.userBar{background:#007AFF;color:white;padding:8px;text-align:center;border-radius:8px;margin-bottom:10px;font-weight:bold}
+</style>
+</head>
+<body>
+<div id="loginBox" class="box">
+  <h1>🔐 LOGIN KASIR SULTAN</h1>
+  <select id="pilihUser">
+    <option value="">-- Pilih Kasir --</option>
+    <option value="Kasir Asep">Kasir Asep</option>
+    <option value="Kasir Budi">Kasir Budi</option>
+    <option value="Admin Sultan">Admin Sultan</option>
+  </select>
+  <button id="btnLogin">MASUK</button>
+  <div style="font-size:11px;color:#666;text-align:center;margin-top:10px">*Akun testing. Ganti nama di kode kalo mau asli</div>
+</div>
+
+<div id="appBox" style="display:none">
+  <h1>💰 KASIR GUDANG V6.1</h1>
+  <div class="userBar">👤 Login: <span id="namaUser"></span> | <button class="btn-kecil btn-merah" id="btnLogout">LOGOUT</button></div>
+
+  <div>
+    <button class="tab aktif" id="tabKasir">🛒 KASIR</button>
+    <button class="tab" id="tabRiwayat">📊 RIWAYAT</button>
+    <button class="tab" id="tabStok">📦 MASTER DATA</button>
+  </div>
+
+  <div id="halamanKasir">
+    <div class="box">
+      <h3>📷 SCAN BARCODE - ANTI GAGAL</h3>
+      <input type="file" id="inputKamera" accept="image/*" capture="environment" style="display:none">
+      <button id="btnScan" class="btn-biru">📷 FOTO BARCODE</button>
+      <div id="hasilScan" style="margin-top:10px;font-size:12px;color:#666">Pencet tombol, foto barcode, otomatis masuk</div>
+      <input type="text" id="searchProduk" placeholder="Atau ketik barcode/nama manual...">
+      <div id="infoProduk">Total Produk: 0</div>
+      <div id="stokList"><div class="loading">Loading produk...</div></div>
+      <div class="paging">
+        <button id="prevPage">◀️ Prev</button>
+        <span id="pageInfo">Hal 1</span>
+        <button id="nextPage">Next ▶️</button>
+      </div>
+    </div>
+
+    <div class="box">
+      <h3>🛒 KERANJANG</h3>
+      <div id="list">Keranjang kosong</div>
+      <div class="flex">
+        <input type="number" id="diskon" placeholder="Diskon %" value="0" min="0" max="100">
+        <button class="btn-kuning" id="btnDiskon">PAKAI</button>
+      </div>
+      <div id="subtotal" style="font-size:14px">Subtotal: Rp 0</div>
+      <div id="potongan" style="font-size:14px;color:#FF3B30">Diskon: Rp 0</div>
+      <div id="hasil">TOTAL: Rp 0</div>
+      <input type="number" id="uangBayar" placeholder="💵 Uang Bayar Customer">
+      <div id="kembalian" style="font-size:18px;font-weight:bold;color:#FF3B30">KEMBALIAN: Rp 0</div>
+      <button id="btnBayar">✅ PROSES BAYAR</button>
+      <button id="btnReset" class="btn-merah">🗑️ KOSONGKAN</button>
+    </div>
+
+    <div class="box" id="boxStruk" style="display:none">
+      <h3>🧾 STRUK TERAKHIR</h3>
+      <div id="isiStruk" class="struk"></div>
+      <button id="btnPrint" class="btn-biru">🖨️ PRINT BLUETOOTH</button>
+      <button id="btnWA">📱 KIRIM KE WA</button>
+    </div>
+  </div>
+
+  <div id="halamanRiwayat" style="display:none">
+    <div class="box">
+      <h3>📊 RIWAYAT TRANSAKSI</h3>
+      <select id="filterKasir">
+        <option value="">Semua Kasir</option>
+        <option value="Kasir Asep">Kasir Asep</option>
+        <option value="Kasir Budi">Kasir Budi</option>
+        <option value="Admin Sultan">Admin Sultan</option>
+      </select>
+      <input type="date" id="filterTanggal">
+      <div id="totalHariIni" style="font-size:18px;font-weight:bold;color:#0B8457">TOTAL: Rp 0</div>
+      <div id="listRiwayat"></div>
+      <button id="btnExport">📥 EXPORT EXCEL</button>
+    </div>
+  </div>
+
+  <div id="halamanStok" style="display:none">
+    <div class="box">
+      <h3>📦 MASTER DATA PRODUK</h3>
+      <input type="text" id="namaProduk" placeholder="Nama Produk">
+      <input type="number" id="hargaProduk" placeholder="Harga Jual">
+      <input type="number" id="stokProduk" placeholder="Stok Awal">
+      <input type="text" id="barcodeProduk" placeholder="Barcode/SKU">
+      <button id="btnSimpanProduk">💾 SIMPAN PRODUK</button>
+      <hr style="margin:15px 0">
+      <textarea id="importMassal" rows="5" placeholder="Paste dari Excel: Nama,Harga,Stok,Barcode&#10;Indomie,8000,500,899123456001" style="width:100%;padding:10px"></textarea>
+      <button id="btnImport" class="btn-kuning">📥 IMPORT 1000+ PRODUK</button>
+      <div id="infoImport" style="font-size:12px;color:#666;margin-top:10px"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let db, USER = '';
+let PRODUK_CACHE = [];
+let KERANJANG = [];
+let DISKON = 0;
+let HALAMAN = 1;
+let PER_HALAMAN = 15;
+
+// ====== LOGIN ======
+document.getElementById('btnLogin').onclick = function(){
+  USER = document.getElementById('pilihUser').value;
+  if(!USER) return alert('Pilih kasir dulu bro!');
+  document.getElementById('namaUser').innerText = USER;
+  document.getElementById('loginBox').style.display = 'none';
+  document.getElementById('appBox').style.display = 'block';
+  initDB();
+};
+
+document.getElementById('btnLogout').onclick = function(){
+  if(confirm('Logout? Keranjang akan dikosongkan')){
+    location.reload();
+  }
+};
+
+// ====== DATABASE ======
+function initDB(){
+  let request = indexedDB.open('KasirGudangV6', 1);
+  request.onupgradeneeded = function(e) {
+    db = e.target.result;
+    if (!db.objectStoreNames.contains('produk')) {
+      let store = db.createObjectStore('produk', {keyPath: 'id', autoIncrement: true});
+      store.createIndex('nama', 'nama', {unique: false});
+      store.createIndex('barcode', 'barcode', {unique: false});
+    }
+    if (!db.objectStoreNames.contains('riwayat')) {
+      db.createObjectStore('riwayat', {keyPath: 'id', autoIncrement: true});
+    }
+  };
+  request.onsuccess = function(e) {
+    db = e.target.result;
+    cekDataAwal();
+    hitungTotalProduk();
+    loadStok();
+    document.getElementById('filterTanggal').valueAsDate = new Date();
+  };
+}
+
+function cekDataAwal(){
+  let tx = db.transaction('produk', 'readonly');
+  let req = tx.objectStore('produk').count();
+  req.onsuccess = () => {
+    if(req.result == 0){
+      let tx2 = db.transaction('produk', 'readwrite');
+      let store2 = tx2.objectStore('produk');
+      store2.add({nama:'Kopi Hitam', harga:5000, stok:50, barcode:'899123456001'});
+      store2.add({nama:'Teh Manis', harga:4000, stok:50, barcode:'899123456002'});
+      store2.add({nama:'Indomie Goreng', harga:8000, stok:30, barcode:'899123456003'});
+    }
+  };
+}
+
+// ====== SCAN BARCODE PAKE FOTO - ANTI GAGAL ======
+document.getElementById('btnScan').onclick = () => document.getElementById('inputKamera').click();
+
+document.getElementById('inputKamera').onchange = async function(e) {
+  let file = e.target.files[0];
+  if(!file) return;
+  document.getElementById('hasilScan').innerText = 'Baca barcode...';
+
+  const codeReader = new ZXing.BrowserMultiFormatReader();
+  try {
+    const result = await codeReader.decodeFromImageUrl(URL.createObjectURL(file));
+    let barcode = result.text;
+    document.getElementById('hasilScan').innerText = '✅ Barcode: ' + barcode;
+    document.getElementById('searchProduk').value = barcode;
+    cariDanJual(barcode);
+  } catch (err) {
+    document.getElementById('hasilScan').innerText = '❌ Gagal baca. Foto ulang yg jelas + ada cahaya.';
+  }
+};
+
+function cariDanJual(barcode){
+  let p = PRODUK_CACHE.find(x => x.barcode == barcode || x.nama.toLowerCase() == barcode.toLowerCase());
+  if(!p) return alert('Produk tidak ditemukan: ' + barcode);
+  if(p.stok <= 0) return alert('Stok habis: ' + p.nama);
+  let tx = db.transaction('produk', 'readwrite');
+  p.stok--;
+  tx.objectStore('produk').put(p);
+  KERANJANG.push({id:p.id, nama:p.nama, harga:p.harga});
+  update();
+  loadStok();
+  alert('✅ ' + p.nama + ' masuk keranjang!');
+}
+
+// ====== EVENT KASIR ======
+document.getElementById('tabKasir').onclick = () => gantiTab('kasir');
+document.getElementById('tabRiwayat').onclick = () => gantiTab('riwayat');
+document.getElementById('tabStok').onclick = () => gantiTab('stok');
+document.getElementById('btnSimpanProduk').onclick = simpanProduk;
+document.getElementById('btnImport').onclick = importMassal;
+document.getElementById('btnBayar').onclick = prosesBayar;
+document.getElementById('btnReset').onclick = resetKeranjang;
+document.getElementById('btnPrint').onclick = printBluetooth;
+document.getElementById('btnWA').onclick = kirimWA;
+document.getElementById('btnExport').onclick = exportExcel;
+document.getElementById('btnDiskon').onclick = pakaiDiskon;
+document.getElementById('uangBayar').oninput = hitungKembali;
+document.getElementById('searchProduk').oninput = () => { HALAMAN = 1; loadStok(); };
+document.getElementById('prevPage').onclick = () => { if(HALAMAN > 1) { HALAMAN--; loadStok(); } };
+document.getElementById('nextPage').onclick = () => { HALAMAN++; loadStok(); };
+document.getElementById('filterTanggal').onchange = loadRiwayat;
+document.getElementById('filterKasir').onchange = loadRiwayat;
+
+function gantiTab(tab){
+  document.getElementById('halamanKasir').style.display = tab == 'kasir'? 'block' : 'none';
+  document.getElementById('halamanRiwayat').style.display = tab == 'riwayat'? 'block' : 'none';
+  document.getElementById('halamanStok').style.display = tab == 'stok'? 'block' : 'none';
+  document.getElementById('tabKasir').className = tab == 'kasir'? 'tab aktif' : 'tab';
+  document.getElementById('tabRiwayat').className = tab == 'riwayat'? 'tab aktif' : 'tab';
+  document.getElementById('tabStok').className = tab == 'stok'? 'tab aktif' : 'tab';
+  if(tab == 'riwayat') loadRiwayat();
+}
+
+function hitungTotalProduk(){
+  let tx = db.transaction('produk', 'readonly');
+  let req = tx.objectStore('produk').count();
+  req.onsuccess = () => {
+    document.getElementById('infoProduk').innerText = 'Total Produk: ' + req.result;
+  };
+}
+
+function loadStok(){
+  let div = document.getElementById('stokList');
+  div.innerHTML = '<div class="loading">Loading...</div>';
+  let filter = document.getElementById('searchProduk').value.toLowerCase();
+
+  let tx = db.transaction('produk', 'readonly');
+  let req = tx.objectStore('produk').getAll();
+  req.onsuccess = function() {
+    let semua = req.result;
+    if(filter){
+      semua = semua.filter(p =>
+        p.nama.toLowerCase().indexOf(filter) > -1 ||
+        (p.barcode && p.barcode.indexOf(filter) > -1)
+      );
+    }
+    let mulai = (HALAMAN - 1) * PER_HALAMAN;
+    let tampil = semua.slice(mulai, mulai + PER_HALAMAN);
+
+    div.innerHTML = '';
+    if(tampil.length == 0) div.innerHTML = '<div class="loading">Produk tidak ditemukan</div>';
+    tampil.forEach(p => {
+      let btn = document.createElement('button');
+      btn.innerText = p.nama + ' - Rp ' + p.harga.toLocaleString() + ' | Stok: ' + p.stok + ' | ' + (p.barcode || '');
+      btn.onclick = () => jual(p.id);
+      if(p.stok <= 0){
+        btn.style.background = '#ccc';
+        btn.disabled = true;
+      }
+      div.appendChild(btn);
+    });
+    document.getElementById('pageInfo').innerText = 'Hal ' + HALAMAN + ' dari ' + Math.ceil(semua.length / PER_HALAMAN);
+    PRODUK_CACHE = semua;
+  };
+}
+
+function jual(id){
+  let p = PRODUK_CACHE.find(x => x.id == id);
+  if(!p || p.stok <= 0) return alert('Stok habis!');
+  let tx = db.transaction('produk', 'readwrite');
+  p.stok--;
+  tx.objectStore('produk').put(p);
+  KERANJANG.push({id:p.id, nama:p.nama, harga:p.harga});
+  update();
+  loadStok();
+}
+
+function update(){
+  let list = document.getElementById('list');
+  let html = '';
+  let subtotal = 0;
+  for(let i = 0; i < KERANJANG.length; i++){
+    html += '<div class="item"><span>' + KERANJANG[i].nama + ' - Rp ' + KERANJANG[i].harga.toLocaleString() + '</span><button class="btn-kecil btn-merah" onclick="hapusItem(' + i + ')">🗑️</button></div>';
+    subtotal += KERANJANG[i].harga;
+  }
+  if(KERANJANG.length == 0) html = 'Keranjang kosong';
+  list.innerHTML = html;
+  let potongan = subtotal * DISKON / 100;
+  let total = subtotal - potongan;
+  document.getElementById('subtotal').innerText = 'Subtotal: Rp ' + subtotal.toLocaleString();
+  document.getElementById('potongan').innerText = 'Diskon ' + DISKON + '%: -Rp ' + potongan.toLocaleString();
+  document.getElementById('hasil').innerText = 'TOTAL: Rp ' + total.toLocaleString();
+  hitungKembali();
+}
+
+function hapusItem(index){
+  let nama = KERANJANG[index].nama;
+  let tx = db.transaction('produk', 'readwrite');
+  let p = PRODUK_CACHE.find(x => x.nama == nama);
+  if(p){
+    p.stok++;
+    tx.objectStore('produk').put(p);
+  }
+  KERANJANG.splice(index, 1);
+  update();
+  loadStok();
+}
+
+function pakaiDiskon(){
+  DISKON = parseInt(document.getElementById('diskon').value) || 0;
+  if(DISKON > 100) DISKON = 100;
+  if(DISKON < 0) DISKON = 0;
+  document.getElementById('diskon').value = DISKON;
+  update();
+}
+
+function hitungKembali(){
+  let subtotal = 0;
+  for(let i = 0; i < KERANJANG.length; i++) subtotal += KERANJANG[i].harga;
+  let potongan = subtotal * DISKON / 100;
+  let total = subtotal - potongan;
+  let bayar = parseInt(document.getElementById('uangBayar').value) || 0;
+  let kembali = bayar - total;
+  document.getElementById('kembalian').innerText = 'KEMBALIAN: Rp ' + Math.max(0,kembali).toLocaleString();
+  return {subtotal:subtotal, potongan:potongan, total:total, bayar:bayar, kembali:kembali};
+}
+
+function prosesBayar(){
+  if(KERANJANG.length == 0) return alert('Keranjang kosong bro!');
+  let data = hitungKembali();
+  if(data.bayar < data.total) return alert('Uang kurang bro!');
+
+  let waktu = new Date().toISOString();
+  let struk = 'TOKO GUDANG SULTAN\n';
+  struk += 'Kasir: ' + USER + '\n';
+  struk += '================\n';
+  struk += new Date().toLocaleString('id-ID') + '\n';
+  struk += '================\n';
+  for(let i = 0; i < KERANJANG.length; i++){
+    struk += KERANJANG[i].nama + '\n Rp ' + KERANJANG[i].harga.toLocaleString() + '\n';
+  }
+  struk += '----------------\n';
+  struk += 'Subtotal: Rp ' + data.subtotal.toLocaleString() + '\n';
+  if(DISKON > 0) struk += 'Diskon ' + DISKON + '%: -Rp ' + data.potongan.toLocaleString() + '\n';
+  struk += 'TOTAL : Rp ' + data.total.toLocaleString() + '\n';
+  struk += 'BAYAR : Rp ' + data.bayar.toLocaleString() + '\n';
+  struk += 'KEMBALI: Rp ' + data.kembali.toLocaleString() + '\n';
+  struk += '================\nTerima Kasih!';
+
+  let tx = db.transaction('riwayat', 'readwrite');
+  tx.objectStore('riwayat').add({waktu:waktu, total:data.total, struk:struk, kasir:USER, items:JSON.stringify(KERANJANG)});
+
+  document.getElementById('isiStruk').innerText = struk;
+  document.getElementById('boxStruk').style.display = 'block';
+  KERANJANG = [];
+  DISKON = 0;
+  document.getElementById('diskon').value = 0;
+  document.getElementById('uangBayar').value = '';
+  update();
+  alert('TRANSAKSI BERHASIL!');
+}
+
+function resetKeranjang(){
+  let tx = db.transaction('produk', 'readwrite');
+  let store = tx.objectStore('produk');
+  for(let i = 0; i < KERANJANG.length; i++){
+    let p = PRODUK_CACHE.find(x => x.nama == KERANJANG[i].nama);
+    if(p){
+      p.stok++;
+      store.put(p);
+    }
+  }
+  KERANJANG = [];
+  DISKON = 0;
+  document.getElementById('diskon').value = 0;
+  document.getElementById('uangBayar').value = '';
+  update();
+  loadStok();
+}
+
+// ====== MASTER DATA ======
+function simpanProduk(){
+  let nama = document.getElementById('namaProduk').value;
+  let harga = parseInt(document.getElementById('hargaProduk').value);
+  let stok = parseInt(document.getElementById('stokProduk').value);
+  let barcode = document.getElementById('barcodeProduk').value;
+  if(!nama||!harga||!stok) return alert('Lengkapi data!');
+
+  let tx = db.transaction('produk', 'readwrite');
+  tx.objectStore('produk').add({nama:nama, harga:harga, stok:stok, barcode:barcode});
+  document.getElementById('namaProduk').value = '';
+  document.getElementById('hargaProduk').value = '';
+  document.getElementById('stokProduk').value = '';
+  document.getElementById('barcodeProduk').value = '';
+  loadStok();
+  hitungTotalProduk();
+  alert('Produk berhasil ditambah!');
+}
+
+function importMassal(){
+  let text = document.getElementById('importMassal').value;
+  if(!text) return alert('Paste data dari Excel dulu bro!');
+  let baris = text.split('\n');
+  let tx = db.transaction('produk', 'readwrite');
+  let store = tx.objectStore('produk');
+  let sukses = 0;
+
+  document.getElementById('infoImport').innerText = 'Importing...';
+  baris.forEach(b => {
+    let kolom = b.split(',');
+    if(kolom.length >= 3){
+      store.add({
+        nama: kolom[0].trim(),
+        harga: parseInt(kolom[1]) || 0,
+        stok: parseInt(kolom[2]) || 0,
+        barcode: kolom[3]? kolom[3].trim() : ''
+      });
+      sukses++;
+    }
+  });
+  tx.oncomplete = function(){
+    document.getElementById('infoImport').innerText = '✅ Berhasil import ' + sukses + ' produk!';
+    document.getElementById('importMassal').value = '';
+    loadStok();
+    hitungTotalProduk();
+  };
+}
+
+// ====== RIWAYAT ======
+function loadRiwayat(){
+  let tanggal = document.getElementById('filterTanggal').value;
+  let kasir = document.getElementById('filterKasir').value;
+  let tx = db.transaction('riwayat', 'readonly');
+  let req = tx.objectStore('riwayat').getAll();
+  req.onsuccess = function(){
+    let semua = req.result;
+    if(tanggal) semua = semua.filter(r => r.waktu.startsWith(tanggal));
+    if(kasir) semua = semua.filter(r => r.kasir == kasir);
+
+    let div = document.getElementById('listRiwayat');
+    let total = 0;
+    div.innerHTML = '';
+    if(semua.length == 0) div.innerHTML = 'Belum ada transaksi';
+    semua.forEach(r => {
+      total += r.total;
+      div.innerHTML += '<div class="item"><span>' + new Date(r.waktu).toLocaleString('id-ID') + ' - ' + r.kasir + '</span><span>Rp ' + r.total.toLocaleString() + '</span></div>';
+    });
+    document.getElementById('totalHariIni').innerText = 'TOTAL: Rp ' + total.toLocaleString();
+  };
+}
+
+// ====== PRINT BLUETOOTH ======
+async function printBluetooth(){
+  let struk = document.getElementById('isiStruk').innerText;
+  try {
+    let device = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
+    });
+    let server = await device.gatt.connect();
+    let service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
+    let characteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
+
+    let encoder = new TextEncoder();
+    let data = encoder.encode(struk + '\n\n\n');
+    await characteristic.writeValue(data);
+    alert('✅ Struk berhasil diprint!');
+  } catch(err) {
+    alert('❌ Print gagal: ' + err + '\n\nPastikan:\n1. Printer thermal nyala\n2. Bluetooth HP nyala\n3. Udah pairing di Setting HP');
+  }
+}
+
+function kirimWA(){
+  let struk = document.getElementById('isiStruk').innerText;
+  let url = 'https://wa.me/?text=' + encodeURIComponent(struk);
+  window.open(url, '_blank');
+}
+
+function exportExcel(){
+  let tx = db.transaction('riwayat', 'readonly');
+  let req = tx.objectStore('riwayat').getAll();
+  req.onsuccess = function(){
+    let csv = 'Tanggal,Kasir,Total,Detail\n';
+    req.result.forEach(r => {
+      csv += `"${new Date(r.waktu).toLocaleString('id-ID')}","${r.kasir}",${r.total},"${r.struk.replace(/"/g,'""')}"\n`;
+    });
+    let blob = new Blob([csv], {type:'text/csv'});
+    let url = window.URL.createObjectURL(blob);
+    let a = document.createElement('a');
+    a.href = url;
+    a.download = 'laporan-gudang.csv';
+    a.click();
+  };
+}
+</script>
+</body>
+</html>

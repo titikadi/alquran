@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kiblat — Arah Makkah</title>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8C97A;
+    --gold-dim: #8A6E35;
+    --bg: #0D0E12;
+    --bg2: #13151C;
+    --bg3: #1A1D26;
+    --text: #F0EAD8;
+    --text-dim: #8A8578;
+    --green: #2D7A5F;
+    --green-bright: #3DAE85;
+    --red: #C0392B;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+
+  /* Geometric background pattern */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(60deg, transparent, transparent 40px, rgba(201,168,76,0.03) 40px, rgba(201,168,76,0.03) 41px),
+      repeating-linear-gradient(-60deg, transparent, transparent 40px, rgba(201,168,76,0.03) 40px, rgba(201,168,76,0.03) 41px),
+      repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(201,168,76,0.02) 40px, rgba(201,168,76,0.02) 41px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 440px;
+    padding: 2rem 1.5rem 3rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    padding-top: 1rem;
+  }
+
+  .arabic-title {
+    font-family: 'Amiri', serif;
+    font-size: 2.2rem;
+    color: var(--gold-light);
+    letter-spacing: 0.05em;
+    line-height: 1;
+    margin-bottom: 0.3rem;
+  }
+
+  .latin-title {
+    font-size: 0.75rem;
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  /* Ornamental divider */
+  .ornament {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--gold-dim);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+  }
+
+  .ornament::before, .ornament::after {
+    content: '';
+    flex: 1;
+    height: 0.5px;
+    background: linear-gradient(to right, transparent, var(--gold-dim));
+  }
+
+  .ornament::after {
+    background: linear-gradient(to left, transparent, var(--gold-dim));
+  }
+
+  /* Compass */
+  .compass-outer {
+    position: relative;
+    width: 300px;
+    height: 300px;
+  }
+
+  /* Decorative geometric ring */
+  .geo-ring {
+    position: absolute;
+    inset: -20px;
+    border-radius: 50%;
+    border: 1px solid rgba(201,168,76,0.15);
+    animation: ring-pulse 3s ease-in-out infinite;
+  }
+
+  .geo-ring-2 {
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 0.5px solid rgba(201,168,76,0.25);
+  }
+
+  @keyframes ring-pulse {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.01); }
+  }
+
+  .compass-face {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, var(--bg3), var(--bg2) 70%, var(--bg));
+    border: 1px solid rgba(201,168,76,0.3);
+    overflow: hidden;
+  }
+
+  /* Tick marks */
+  .compass-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Direction labels */
+  .dir-label {
+    position: absolute;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    color: var(--gold-dim);
+  }
+
+  .dir-N { top: 14px; left: 50%; transform: translateX(-50%); color: var(--gold-light); }
+  .dir-S { bottom: 14px; left: 50%; transform: translateX(-50%); }
+  .dir-E { right: 14px; top: 50%; transform: translateY(-50%); }
+  .dir-W { left: 14px; top: 50%; transform: translateY(-50%); }
+
+  /* Needle SVG layer */
+  #needle-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  /* Qibla arrow layer */
+  #qibla-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    display: none;
+  }
+
+  /* Center jewel */
+  .center-jewel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1.5px solid var(--gold);
+    z-index: 20;
+    box-shadow: 0 0 8px rgba(201,168,76,0.4);
+  }
+
+  /* Info cards */
+  .cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .card {
+    background: var(--bg2);
+    border: 0.5px solid rgba(201,168,76,0.15);
+    border-radius: 10px;
+    padding: 0.875rem 1rem;
+    transition: border-color 0.3s;
+  }
+
+  .card.active {
+    border-color: rgba(61,174,133,0.4);
+  }
+
+  .card-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+
+  .card-value {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .card-value span {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-weight: 300;
+  }
+
+  .card-value.small { font-size: 14px; }
+
+  /* Status bar */
+  .status-bar {
+    width: 100%;
+    background: var(--bg2);
+    border: 0.5px solid rgba(201,168,76,0.12);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: center;
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    flex-shrink: 0;
+  }
+
+  .status-dot.active { background: var(--green-bright); animation: blink 1.5s infinite; }
+  .status-dot.error { background: var(--red); }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* Button */
+  .btn {
+    width: 100%;
+    padding: 0.875rem;
+    background: transparent;
+    border: 1px solid rgba(201,168,76,0.4);
+    border-radius: 10px;
+    color: var(--gold-light);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .btn:hover {
+    background: rgba(201,168,76,0.08);
+    border-color: var(--gold);
+  }
+
+  .btn:active { transform: scale(0.98); }
+
+  /* Disclaimer */
+  .disclaimer {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-align: center;
+    line-height: 1.7;
+    opacity: 0.6;
+  }
+
+  /* Kaaba icon at tip of qibla arrow */
+  .kaaba-text {
+    font-size: 13px;
+  }
+
+  /* Animation for compass appearing */
+  .compass-outer {
+    animation: fade-in 0.8s ease-out;
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="arabic-title">اتجاه القبلة</div>
+    <div class="latin-title">Penentu Arah Kiblat</div>
+  </header>
+
+  <div class="ornament">✦</div>
+
+  <!-- Compass -->
+  <div class="compass-outer">
+    <div class="geo-ring"></div>
+    <div class="geo-ring-2"></div>
+
+    <div class="compass-face">
+      <!-- Tick marks SVG -->
+      <svg class="compass-svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+        <g id="ticks"></g>
+        <!-- Inner decorative circles -->
+        <circle cx="150" cy="150" r="110" fill="none" stroke="rgba(201,168,76,0.08)" stroke-width="0.5"/>
+        <circle cx="150" cy="150" r="80" fill="none" stroke="rgba(201,168,76,0.05)" stroke-width="0.5"/>
+        <!-- Crosshair subtle -->
+        <line x1="150" y1="40" x2="150" y2="260" stroke="rgba(201,168,76,0.04)" stroke-width="0.5"/>
+        <line x1="40" y1="150" x2="260" y2="150" stroke="rgba(201,168,76,0.04)" stroke-width="0.5"/>
+      </svg>
+    </div>
+
+    <!-- Direction labels -->
+    <div class="dir-label dir-N">U</div>
+    <div class="dir-label dir-S">S</div>
+    <div class="dir-label dir-E">T</div>
+    <div class="dir-label dir-W">B</div>
+
+    <!-- Compass needle -->
+    <svg id="needle-layer" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+      <g style="transform-origin: 150px 150px;" id="needle-group">
+        <!-- North (red) -->
+        <polygon points="150,35 157,150 150,162 143,150" fill="#C0392B" opacity="0.9"/>
+        <!-- South (dim) -->
+        <polygon points="150,162 157,150 150,265 143,150" fill="rgba(201,168,76,0.25)"/>
+        <!-- N label on needle -->
+        <text x="150" y="30" text-anchor="middle" font-family="'DM Sans'" font-size="9" font-weight="500" fill="#C0392B" letter-spacing="0.1em">N</text>
+      </g>
+    </svg>
+
+    <!-- Qibla arrow -->
+    <svg id="qibla-layer" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+      <g style="transform-origin: 150px 150px;" id="qibla-group">
+        <!-- Shaft -->
+        <line x1="150" y1="150" x2="150" y2="45" stroke="#3DAE85" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- Arrowhead -->
+        <polygon points="150,28 158,50 142,50" fill="#3DAE85"/>
+        <!-- Kaaba symbol -->
+        <text x="150" y="24" text-anchor="middle" class="kaaba-text">🕋</text>
+        <!-- Glow effect on line -->
+        <line x1="150" y1="150" x2="150" y2="45" stroke="#3DAE85" stroke-width="6" stroke-linecap="round" opacity="0.12"/>
+      </g>
+    </svg>
+
+    <div class="center-jewel"></div>
+  </div>
+
+  <!-- Info Cards -->
+  <div class="cards">
+    <div class="card" id="card-qibla">
+      <div class="card-label">Arah Kiblat</div>
+      <div class="card-value" id="val-qibla">—<span> °</span></div>
+    </div>
+    <div class="card" id="card-compass">
+      <div class="card-label">Kompas</div>
+      <div class="card-value" id="val-compass">—<span> °</span></div>
+    </div>
+    <div class="card">
+      <div class="card-label">Lintang</div>
+      <div class="card-value small" id="val-lat">—</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Bujur</div>
+      <div class="card-value small" id="val-lng">—</div>
+    </div>
+  </div>
+
+  <!-- Status -->
+  <div class="status-bar" id="status-bar">
+    <div class="status-dot" id="status-dot"></div>
+    <span id="status-text">Tekan tombol untuk memulai</span>
+  </div>
+
+  <button class="btn" onclick="getLocation()">Dapatkan Lokasi Saya</button>
+
+  <div class="disclaimer">
+    Akurasi bergantung pada kalibrasi sensor kompas perangkat Anda.<br>
+    Koordinat Ka'bah: 21.4225° LU, 39.8262° BT
+  </div>
+
+</div>
+
+<script>
+  // Draw tick marks
+  const tickSvg = document.getElementById('ticks');
+  for (let i = 0; i < 72; i++) {
+    const angle = (i * 5) * Math.PI / 180;
+    const isMajor = i % 9 === 0;
+    const isMid = i % 3 === 0;
+    const r1 = 128;
+    const r2 = isMajor ? 112 : isMid ? 118 : 122;
+    const x1 = 150 + r1 * Math.sin(angle);
+    const y1 = 150 - r1 * Math.cos(angle);
+    const x2 = 150 + r2 * Math.sin(angle);
+    const y2 = 150 - r2 * Math.cos(angle);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', x1.toFixed(2));
+    line.setAttribute('y1', y1.toFixed(2));
+    line.setAttribute('x2', x2.toFixed(2));
+    line.setAttribute('y2', y2.toFixed(2));
+    line.setAttribute('stroke', isMajor ? 'rgba(201,168,76,0.5)' : 'rgba(201,168,76,0.2)');
+    line.setAttribute('stroke-width', isMajor ? '1.5' : '0.8');
+    line.setAttribute('stroke-linecap', 'round');
+    tickSvg.appendChild(line);
+  }
+
+  const KAABA = { lat: 21.4225, lng: 39.8262 };
+  let qiblaBearing = null;
+  let deviceHeading = null;
+  let compassStarted = false;
+
+  function toRad(d) { return d * Math.PI / 180; }
+  function toDeg(r) { return r * 180 / Math.PI; }
+
+  function calcQibla(lat, lng) {
+    const dLng = toRad(KAABA.lng - lng);
+    const latR = toRad(lat);
+    const kR = toRad(KAABA.lat);
+    const y = Math.sin(dLng) * Math.cos(kR);
+    const x = Math.cos(latR) * Math.sin(kR) - Math.sin(latR) * Math.cos(kR) * Math.cos(dLng);
+    return ((toDeg(Math.atan2(y, x)) + 360) % 360);
+  }
+
+  function setStatus(msg, type) {
+    document.getElementById('status-text').textContent = msg;
+    const dot = document.getElementById('status-dot');
+    dot.className = 'status-dot' + (type ? ' ' + type : '');
+  }
+
+  function updateDisplay() {
+    if (qiblaBearing === null) return;
+    document.getElementById('val-qibla').innerHTML = Math.round(qiblaBearing) + '<span> °</span>';
+    document.getElementById('card-qibla').classList.add('active');
+
+    const qg = document.getElementById('qibla-group');
+    const nl = document.getElementById('needle-layer');
+    const ql = document.getElementById('qibla-layer');
+    ql.style.display = '';
+
+    if (deviceHeading !== null) {
+      document.getElementById('val-compass').innerHTML = Math.round(deviceHeading) + '<span> °</span>';
+      document.getElementById('card-compass').classList.add('active');
+      // Rotate needle to match device heading
+      document.getElementById('needle-group').style.transform = `rotate(${deviceHeading}deg)`;
+      document.getElementById('needle-group').style.transformOrigin = '150px 150px';
+      // Rotate qibla line relative to device heading
+      const rel = qiblaBearing - deviceHeading;
+      qg.style.transform = `rotate(${rel}deg)`;
+      qg.style.transformOrigin = '150px 150px';
+    } else {
+      // No compass: show qibla arrow pointing at absolute bearing from north-up
+      qg.style.transform = `rotate(${qiblaBearing}deg)`;
+      qg.style.transformOrigin = '150px 150px';
+    }
+  }
+
+  function getLocation() {
+    setStatus('Mengambil lokasi GPS...', '');
+    if (!navigator.geolocation) {
+      setStatus('Geolokasi tidak didukung.', 'error');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(pos => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      qiblaBearing = calcQibla(lat, lng);
+
+      document.getElementById('val-lat').textContent = lat.toFixed(4) + '°';
+      document.getElementById('val-lng').textContent = lng.toFixed(4) + '°';
+      setStatus('Lokasi ditemukan. Kompas sedang menyala...', 'active');
+      updateDisplay();
+
+      if (!compassStarted) {
+        compassStarted = true;
+        startCompass();
+      }
+    }, err => {
+      setStatus('Gagal: ' + err.message, 'error');
+    }, { enableHighAccuracy: true });
+  }
+
+  function startCompass() {
+    if (typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function') {
+      DeviceOrientationEvent.requestPermission().then(res => {
+        if (res === 'granted') listenOrientation();
+        else setStatus('Izin sensor ditolak. Arah kiblat: ' + Math.round(qiblaBearing) + '° dari Utara.', '');
+      }).catch(() => {
+        setStatus('Sensor tidak dapat diakses.', 'error');
+      });
+    } else if (window.DeviceOrientationEvent) {
+      listenOrientation();
+    } else {
+      setStatus('Sensor kompas tidak tersedia. Kiblat: ' + Math.round(qiblaBearing) + '° dari Utara.', '');
+    }
+  }
+
+  function listenOrientation() {
+    window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+    window.addEventListener('deviceorientation', handleOrientation, true);
+    setStatus('Kompas aktif — hadapkan 🕋 ke atas untuk kiblat', 'active');
+  }
+
+  function handleOrientation(e) {
+    let h = null;
+    if (e.webkitCompassHeading !== undefined) {
+      h = e.webkitCompassHeading;
+    } else if (e.absolute && e.alpha !== null) {
+      h = (360 - e.alpha) % 360;
+    } else if (e.alpha !== null) {
+      h = (360 - e.alpha) % 360;
+    }
+    if (h !== null) { deviceHeading = h; updateDisplay(); }
+  }
+</script>
+</body>
+</html>

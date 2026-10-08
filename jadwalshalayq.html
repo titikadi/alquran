@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jadwal Shalat Indonesia</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif}
+body{background:#0f172a;color:#e2e8f0}
+header{background:linear-gradient(135deg,#0b8457,#1b5e20);padding:20px;text-align:center}
+header h1{font-size:20px;margin-bottom:5px}
+header p{font-size:13px;opacity:0.8}
+.container{padding:15px;max-width:800px;margin:auto}
+.card{background:#1e293b;margin-bottom:15px;padding:15px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+select,input,button{
+  width:100%;padding:12px;margin-bottom:10px;border:none;border-radius:8px;
+  background:#334155;color:#e2e8f0;font-size:15px;outline:none
+}
+button{background:#0b8457;font-weight:bold;cursor:pointer}
+button:active{background:#1b5e20}
+button:disabled{background:#475569;cursor:not-allowed}
+.table-wrapper{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:10px;text-align:center;border-bottom:1px solid #334155}
+th{background:#334155;color:#0b8457;font-weight:600}
+tr:hover{background:#334155}
+.today{background:#0b8457;color:white;font-weight:bold}
+.loading{text-align:center;padding:30px;color:#94a3b8}
+.error{background:#7f1d1d;color:#fecaca;padding:12px;border-radius:8px;margin:10px 0}
+.badge{background:#0b8457;color:white;padding:4px 10px;border-radius:12px;font-size:12px;display:inline-block;margin:5px 0}
+.time-now{font-size:24px;font-weight:bold;color:#0b8457;text-align:center;margin:10px 0}
+.next-prayer{background:#1e293b;padding:12px;border-radius:8px;text-align:center;margin-bottom:15px}
+.next-prayer span{color:#0b8457;font-size:18px;font-weight:bold}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🕌 Jadwal Shalat Indonesia</h1>
+  <p>Data dari EQuran.id API v2</p>
+</header>
+
+<div class="container">
+  <div class="card">
+    <div class="time-now" id="timeNow"></div>
+    <div class="next-prayer" id="nextPrayer">Pilih lokasi dulu</div>
+    
+    <select id="provinsi" onchange="loadKabkota()">
+      <option value="">Pilih Provinsi</option>
+    </select>
+    
+    <select id="kabkota" disabled onchange="loadJadwal()">
+      <option value="">Pilih Kab/Kota</option>
+    </select>
+    
+    <div style="display:flex;gap:10px">
+      <select id="bulan"></select>
+      <select id="tahun"></select>
+    </div>
+    
+    <button id="btnCari" onclick="loadJadwal()">Cari Jadwal</button>
+  </div>
+
+  <div id="hasil"></div>
+</div>
+
+<script>
+const API = "https://equran.id/api/v2/shalat";
+let jadwalData = [];
+let nextPrayerTimer;
+
+function init(){
+  // Load provinsi
+  fetch(API + "/provinsi")
+    .then(res => res.json())
+    .then(data => {
+      const sel = document.getElementById("provinsi");
+      data.data.forEach(p=>{
+        sel.innerHTML += `<option value="${p}">${p}</option>`;
+      });
+    })
+    .catch(()=>showError("Gagal load provinsi"));
+  
+  // Set bulan & tahun
+  const now = new Date();
+  const bulanSel = document.getElementById("bulan");
+  const tahunSel = document.getElementById("tahun");
+  
+  const bulanNama = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+  bulanNama.forEach((b,i)=>{
+    bulanSel.innerHTML += `<option value="${i+1}" ${i+1===now.getMonth()+1?'selected':''}>${b}</option>`;
+  });
+  
+  for(let y=2024;y<=2027;y++){
+    tahunSel.innerHTML += `<option value="${y}" ${y===now.getFullYear()?'selected':''}>${y}</option>`;
+  }
+  
+  updateTime();
+  setInterval(updateTime, 1000);
+}
+
+function loadKabkota(){
+  const provinsi = document.getElementById("provinsi").value;
+  const kabSel = document.getElementById("kabkota");
+  
+  if(!provinsi){
+    kabSel.disabled = true;
+    kabSel.innerHTML = '<option value="">Pilih Kab/Kota</option>';
+    return;
+  }
+  
+  kabSel.disabled = true;
+  kabSel.innerHTML = '<option value="">Loading...</option>';
+  
+  fetch(API + "/kabkota", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({provinsi: provinsi})
+  })
+  .then(res => res.json())
+  .then(data => {
+    kabSel.innerHTML = '<option value="">Pilih Kab/Kota</option>';
+    data.data.forEach(k=>{
+      kabSel.innerHTML += `<option value="${k}">${k}</option>`;
+    });
+    kabSel.disabled = false;
+  })
+  .catch(()=>showError("Gagal load kabupaten/kota"));
+}
+
+function loadJadwal(){
+  const provinsi = document.getElementById("provinsi").value;
+  const kabkota = document.getElementById("kabkota").value;
+  const bulan = document.getElementById("bulan").value;
+  const tahun = document.getElementById("tahun").value;
+  
+  if(!provinsi || !kabkota){
+    alert("Pilih provinsi dan kabupaten/kota dulu bro");
+    return;
+  }
+  
+  document.getElementById("btnCari").disabled = true;
+  document.getElementById("hasil").innerHTML = '<div class="loading">Loading jadwal...</div>';
+  
+  fetch(API, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      provinsi: provinsi,
+      kabkota: kabkota,
+      bulan: parseInt(bulan),
+      tahun: parseInt(tahun)
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if(data.code !== 200){
+      showError(data.message);
+      return;
+    }
+    jadwalData = data.data.jadwal;
+    renderJadwal(data.data);
+    findNextPrayer();
+  })
+  .catch(()=>showError("Gagal load jadwal shalat"))
+  .finally(()=>{
+    document.getElementById("btnCari").disabled = false;
+  });
+}
+
+function renderJadwal(data){
+  let html = `
+    <div class="card">
+      <h3>${data.kabkota}, ${data.provinsi}</h3>
+      <span class="badge">${data.bulan_nama} ${data.tahun}</span>
+      
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>Imsak</th>
+              <th>Subuh</th>
+              <th>Dzuhur</th>
+              <th>Ashar</th>
+              <th>Maghrib</th>
+              <th>Isya</th>
+            </tr>
+          </thead>
+          <tbody>
+  `;
+  
+  const today = new Date().getDate();
+  
+  data.jadwal.forEach(j=>{
+    const isToday = j.tanggal === today && 
+                    parseInt(document.getElementById("bulan").value) === new Date().getMonth()+1 &&
+                    parseInt(document.getElementById("tahun").value) === new Date().getFullYear();
+    
+    html += `
+      <tr class="${isToday?'today':''}">
+        <td>${j.tanggal}<br><small>${j.hari}</small></td>
+        <td>${j.imsak}</td>
+        <td>${j.subuh}</td>
+        <td>${j.dzuhur}</td>
+        <td>${j.ashar}</td>
+        <td>${j.maghrib}</td>
+        <td>${j.isya}</td>
+      </tr>
+    `;
+  });
+  
+  html += `</tbody></table></div></div>`;
+  document.getElementById("hasil").innerHTML = html;
+}
+
+function updateTime(){
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const dateStr = now.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById("timeNow").innerHTML = `${timeStr}<br><small style="font-size:14px;font-weight:normal">${dateStr}</small>`;
+}
+
+function findNextPrayer(){
+  clearInterval(nextPrayerTimer);
+  if(jadwalData.length === 0) return;
+  
+  const updateNext = ()=>{
+    const now = new Date();
+    const today = jadwalData.find(j=>j.tanggal === now.getDate());
+    if(!today) return;
+    
+    const prayers = [
+      {name:"Subuh", time:today.subuh},
+      {name:"Dzuhur", time:today.dzuhur},
+      {name:"Ashar", time:today.ashar},
+      {name:"Maghrib", time:today.maghrib},
+      {name:"Isya", time:today.isya}
+    ];
+    
+    const nowMinutes = now.getHours()*60 + now.getMinutes();
+    
+    for(let p of prayers){
+      const [h,m] = p.time.split(':').map(Number);
+      const prayerMinutes = h*60 + m;
+      if(prayerMinutes > nowMinutes){
+        const diff = prayerMinutes - nowMinutes;
+        const hours = Math.floor(diff/60);
+        const mins = diff%60;
+        document.getElementById("nextPrayer").innerHTML = 
+          `Waktu <span>${p.name}</span> lagi ${hours}j ${mins}m lagi`;
+        return;
+      }
+    }
+    document.getElementById("nextPrayer").innerHTML = "Besok Subuh";
+  };
+  
+  updateNext();
+  nextPrayerTimer = setInterval(updateNext, 60000);
+}
+
+function showError(msg){
+  document.getElementById("hasil").innerHTML = `<div class="error">${msg}</div>`;
+}
+
+init();
+</script>
+
+</body>
+</html>

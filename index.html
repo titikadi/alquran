@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kasir</title>
+<style>
+* {margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+body {background:#122a0f;color:#e2e8f0;padding-bottom:80px}
+
+header {background:linear-gradient(135deg,#31134a,#14532d,#1299);padding:30px;text-align:center;font-size:22px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+.card {background:#122a17;padding:16px;border-radius:16px;margin-bottom:16px;box-shadow:0 4px 10px rgba(0,0,0,0.2)}
+.saldo {font-size:42px;font-weight:700;color:#f59e0b}
+.btn {background:#34126a;border:none;padding:10px 10px;border-radius:10px;color:white;font-weight:400;cursor:pointer;width:100%;margin-top:10px}
+.btn:hover {background:#13803d}
+.btn-danger {background:#dc2626}
+.btn-success {background:#13855e}
+.btn-warning {background:#f59e0b}
+.btn:disabled {background:#374151;cursor:not-allowed}
+input,select {width:100%;padding:12px;border-radius:10px;border:1px solid #726;background:#0a1a0f;color:#e2e8f0;margin-top:8px}
+
+/* TABEL - kolom contoh dihapus */
+table {width:100%;border-collapse:collapse;margin-top:10px;table-layout:fixed}
+th:nth-child(1), td:nth-child(1){width:30%;} /* Nama */
+th:nth-child(2), td:nth-child(2){width:20%;} /* Beli */
+th:nth-child(3), td:nth-child(3){width:1
+40%;} /* Jual */
+th:nth-child(4), td:nth-child(4){width:2
+40%;} /* Aksi */
+th,td {padding:8px;text-align:left;border-bottom:1px solid #3d26;font-size:12px;word-wrap:break-word}
+th {background:#003d26}
+
+.nav {position:fixed;bottom:0;left:0;right:0;background:#111a17;display:flex;justify-content:space-around;padding:12px 0;border-top:1px solid #123d26}
+.nav button {background:none;border:none;color:#94a3b8;font-size:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center}
+.nav button.active {color:#4ade80;font-weight:700}
+.nav svg {width:24px;height:24px;display:block;margin:0 auto 4px;stroke:#94a3b8;fill:none;transition:0.2s}
+.nav button.active svg {stroke:#4ade80}
+.page {display:none}
+.page.active {display:block}
+.cart-item {display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #1f3d26}
+.badge {background:#0000e;padding:4px 8px;border-radius:8px;font-size:18px}
+.text-red {color:#f87171}
+.text-green {color:#4ade80}
+.flex {display:flex;gap:10px}
+.flex input {flex:1}
+.receipt-box {background:#fefce8;color:#1e293b;padding:12px;border-radius:8px;font-family:monospace;font-size:13px;white-space:pre-wrap;border:1px dashed #94a3b8}
+
+.tab-menu {display:flex;gap:10px;margin-bottom:16px}
+.tab-menu button {flex:1;background:#1f3d26;border:none;padding:12px;border-radius:12px;color:#94a3b8;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600}
+.tab-menu button.active {background:#16a34a;color:white}
+.tab-menu svg {width:20px;height:20px;stroke:currentColor}
+.tab-content {display:none}
+.tab-content.active {display:block}
+</style>
+</head>
+<body>
+
+<header>💼 Kasir</header>
+
+<div class="container">
+
+  <!-- HOME -->
+  <div id="home" class="page active">
+    <div class="card">
+      <div>💲Saldo Hari Ini</div>
+      <div class="saldo" id="saldo">Rp 0</div>
+    </div>
+
+    <div class="tab-menu">
+      <button class="active" onclick="showTab('produk',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <path d="M3 9h18M9 21V9"/>
+        </svg>
+        Pilih Produk
+      </button>
+      <button onclick="showTab('keranjang',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="9" cy="21" r="1"/>
+          <circle cx="20" cy="21" r="1"/>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+        </svg>
+        Keranjang <span id="cartCount" class="badge" style="margin-left:4px">0</span>
+      </button>
+    </div>
+
+    <!-- Tab Pilih Produk -->
+    <div id="tab-produk" class="tab-content active">
+      <div class="card">
+        <h3>Pilih Produk</h3>
+        <input type="text" id="search" placeholder="Cari produk..." oninput="renderProduk()">
+        <table>
+          <thead><tr><th>Nama</th><th>Beli</th><th>Jual</th><th>Aksi</th></tr></thead>
+          <tbody id="produkList"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab Keranjang -->
+    <div id="tab-keranjang" class="tab-content">
+      <div class="card">
+        <h3>🛒 KERANJANG</h3>
+        <div id="cartList" style="margin:10px 0;">Keranjang kosong</div>
+
+        <div class="flex">
+          <input type="number" id="diskon" placeholder="0" oninput="updateTotal()">
+          <button class="btn btn-warning" style="width:auto;margin-top:8px" onclick="updateTotal()">PAKAI</button>
+        </div>
+
+        <div style="margin-top:12px">
+          <div>Subtotal: <span id="subtotal">Rp 0</span></div>
+          <div class="text-red">Diskon 0%: <span id="diskonTxt">-Rp 0</span></div>
+          <div class="text-green" style="font-size:20px;font-weight:700">TOTAL: <span id="total">Rp 0</span></div>
+        </div>
+
+        <input type="number" id="bayarCustomer" placeholder="💵 Uang Bayar Customer" oninput="hitungKembalian()">
+        <div class="text-red" style="font-weight:700;margin:10px 0">KEMBALIAN: <span id="kembalian">Rp 0</span></div>
+
+        <button class="btn btn-success" onclick="bayar()">✅ PROSES BAYAR</button>
+        <button class="btn btn-danger" onclick="clearCart()">🗑️ KOSONGKAN</button>
+      </div>
+
+      <div class="card">
+        <h3>📄 STRUK TERAKHIR</h3>
+        <div class="receipt-box" id="strukBox">Belum ada transaksi</div>
+        <button class="btn" onclick="openPrint()">🖨️ Print Struk</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAMBAH PRODUK -->
+  <div id="tambah" class="page">
+    <div class="card">
+      <h3>Tambah Produk Baru</h3>
+      <input type="text" id="pNama" placeholder="Nama Produk">
+      <input type="number" id="pHarga" placeholder="Harga Beli per pcs">
+      <input type="number" id="pJual" placeholder="Harga Jual per pcs">
+      <input type="number" id="pStok" placeholder="Stok Awal per pcs">
+      <button class="btn" onclick="tambahProduk()">+ Tambah</button>
+    </div>
+
+    <div class="card">
+      <h3>Daftar Produk <span class="badge" id="jmlProduk">0</span></h3>
+      <input type="text" id="search2" placeholder="Cari produk..." oninput="renderAllProduk()">
+      <table>
+        <thead><tr><th>Nama</th><th>Beli</th><th>Jual</th><th>Hapus</th></tr></thead>
+        <tbody id="allProduk"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RIWAYAT -->
+  <div id="riwayat" class="page">
+    <div class="card">
+      <h3>Riwayat Transaksi</h3>
+      <table>
+        <thead><tr><th>Waktu</th><th>Item</th><th>Total</th><th>Keuntungan</th></tr></thead>
+        <tbody id="riwayatList"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PROFIL -->
+  <div id="profil" class="page">
+    <div class="card">
+      <h3>Profil Toko</h3>
+      <input type="text" id="namaToko" placeholder="Nama Toko">
+      <input type="text" id="namaPemilik" placeholder="Nama Kasir">
+      <button class="btn" onclick="simpanProfil()">Simpan Profil</button>
+    </div>
+    <div class="card">
+      <button class="btn btn-danger" onclick="resetData()">⚠️ Reset Semua Data</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- NAV BAWAH -->
+<div class="nav">
+  <button class="active" onclick="showPage('home',this)">
+    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 12l9-9 9 9"/>
+      <path d="M9 21V9h6v12"/>
+    </svg>
+    Home
+  </button>
+
+  <button onclick="showPage('tambah',this)">
+    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M12 8v8M8 12h8"/>
+    </svg>
+    Produk
+  </button>
+
+  <button onclick="showPage('riwayat',this)">
+    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 3v18h18"/>
+      <path d="M18 17V9M13 17V5M8 17v-3"/>
+    </svg>
+    Riwayat
+  </button>
+
+  <button onclick="showPage('profil',this)">
+    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="7" r="4"/>
+      <path d="M5.5 21a7.5 7.5 0 0 1 13 0"/>
+    </svg>
+    Profil
+  </button>
+</div>
+
+<script>
+let produk = JSON.parse(localStorage.getItem('produk')||'[]');
+let riwayat = JSON.parse(localStorage.getItem('riwayat')||'[]');
+let saldo = parseInt(localStorage.getItem('saldo')||'0');
+let cart = [];
+let lastStruk = '';
+
+function saveAll(){
+  localStorage.setItem('produk',JSON.stringify(produk));
+  localStorage.setItem('riwayat',JSON.stringify(riwayat));
+  localStorage.setItem('saldo',saldo);
+}
+
+function formatRp(n){
+  return 'Rp '+n.toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+}
+
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  if(id=='home') renderProduk();
+  if(id=='tambah') renderAllProduk();
+  if(id=='riwayat') renderRiwayat();
+  updateSaldo();
+}
+
+function showTab(id,btn){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-menu button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function updateSaldo(){
+  document.getElementById('saldo').innerText = formatRp(saldo);
+}
+
+function getStokTersedia(index){
+  let p = produk[index];
+  let diKeranjang = cart.find(c=>c.nama==p.nama)?.qty || 0;
+  return p.stok - diKeranjang;
+}
+
+function renderProduk(){
+  let q = document.getElementById('search').value.toLowerCase();
+  let html = '';
+  produk.filter(p=>p.nama.toLowerCase().includes(q)).forEach((p,i)=>{
+    let stokTersedia = getStokTersedia(i);
+    let btnDisabled = stokTersedia <= 0? 'disabled' : '';
+    html += `<tr>
+      <td>${p.nama} <br><small style="color:#94a3b8">Stok: ${stokTersedia}</small></td>
+      <td>${formatRp(p.harga)}</td>
+      <td>${formatRp(p.jual)}</td>
+      <td><button class="btn" style="padding:6px 12px" onclick="addCart(${i})" ${btnDisabled}>+ Keranjang</button></td>
+    </tr>`;
+  });
+  document.getElementById('produkList').innerHTML = html;
+}
+
+function renderAllProduk(){
+  let q = document.getElementById('search2').value.toLowerCase();
+  let html = '';
+  produk.filter(p=>p.nama.toLowerCase().includes(q)).forEach((p,i)=>{
+    html += `<tr>
+      <td>${p.nama}</td>
+      <td>${formatRp(p.harga)}</td>
+      <td>${formatRp(p.jual)}</td>
+      <td><button class="btn btn-danger" style="padding:6px 12px" onclick="hapusProduk(${i})">X</button></td>
+    </tr>`;
+  });
+  document.getElementById('allProduk').innerHTML = html;
+  document.getElementById('jmlProduk').innerText = produk.length;
+}
+
+function tambahProduk(){
+  let nama = document.getElementById('pNama').value;
+  let harga = parseInt(document.getElementById('pHarga').value)||0;
+  let jual = parseInt(document.getElementById('pJual').value)||0;
+  let stok = parseInt(document.getElementById('pStok').value)||0;
+  if(!nama){alert('Nama wajib');return}
+  produk.push({nama,harga,jual,stok});
+  saveAll();
+  renderAllProduk();
+  document.getElementById('pNama').value='';
+  document.getElementById('pHarga').value='';
+  document.getElementById('pJual').value='';
+  document.getElementById('pStok').value='';
+}
+
+function hapusProduk(i){
+  if(confirm('Hapus produk ini?')) {
+    produk.splice(i,1);
+    saveAll();
+    renderAllProduk();
+  }
+}
+
+function addCart(i){
+  let p = produk[i];
+  let stokTersedia = getStokTersedia(i);
+  if(stokTersedia <= 0){alert('Stok habis');return}
+
+  let found = cart.find(c=>c.nama==p.nama);
+  if(found) found.qty++;
+  else cart.push({nama:p.nama,jual:p.jual,harga:p.harga,qty:1});
+
+  updateCart();
+  renderProduk();
+}
+
+function updateCart(){
+  let html='';
+  let total=0;
+  let count=0;
+  if(cart.length==0){
+    document.getElementById('cartList').innerHTML = 'Keranjang kosong';
+  } else {
+    cart.forEach(c=>{
+      html+=`<div class="cart-item"><span>${c.nama} x${c.qty}</span><span>${formatRp(c.jual*c.qty)}</span></div>`;
+      total+=c.jual*c.qty;
+      count+=c.qty;
+    });
+    document.getElementById('cartList').innerHTML = html;
+  }
+  document.getElementById('subtotal').innerText = formatRp(total);
+  document.getElementById('cartCount').innerText = count;
+  updateTotal();
+}
+
+function updateTotal(){
+  let subtotal = cart.reduce((a,c)=>a+c.jual*c.qty,0);
+  let diskonRp = parseInt(document.getElementById('diskon').value)||0;
+  let persen = subtotal>0? Math.round(diskonRp/subtotal*100) : 0;
+  let total = subtotal - diskonRp;
+
+  document.getElementById('diskonTxt').innerText = `-Rp ${diskonRp.toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')}`;
+  document.getElementById('diskonTxt').previousSibling.textContent = `Diskon ${persen}%: `;
+  document.getElementById('total').innerText = formatRp(total);
+  hitungKembalian();
+}
+
+function hitungKembalian(){
+  let total = cart.reduce((a,c)=>a+c.jual*c.qty,0) - (parseInt(document.getElementById('diskon').value)||0);
+  let bayar = parseInt(document.getElementById('bayarCustomer').value)||0;
+  let kembali = bayar - total;
+  document.getElementById('kembalian').innerText = formatRp(kembali>0? kembali : 0);
+}
+
+function bayar(){
+  if(cart.length==0){alert('Keranjang kosong');return}
+  let total = cart.reduce((a,c)=>a+c.jual*c.qty,0);
+  let diskon = parseInt(document.getElementById('diskon').value)||0;
+  let bayar = total-diskon;
+  let bayarCustomer = parseInt(document.getElementById('bayarCustomer').value)||0;
+
+  if(bayarCustomer < bayar){alert('Uang bayar kurang');return}
+
+  let keuntungan = cart.reduce((a,c)=>a+(c.jual-c.harga)*c.qty,0)-diskon;
+  saldo += bayar;
+
+  riwayat.unshift({
+    waktu:new Date().toLocaleString(),
+    item:cart.map(c=>c.nama+'x'+c.qty).join(', '),
+    total:bayar,
+    untung:keuntungan
+  });
+
+  cart.forEach(c=>{
+    let p = produk.find(p=>p.nama==c.nama);
+    if(p) p.stok -= c.qty;
+  });
+
+  let namaToko = localStorage.getItem('namaToko')||'TOKO SAYA';
+  let namaKasir = localStorage.getItem('namaPemilik')||'KASIR';
+
+  lastStruk = `${namaToko.toUpperCase()}
+Kasir: ${namaKasir}
+
+${new Date().toLocaleString()}
+
+${cart.map(c=>`${c.nama} x${c.qty} - ${formatRp(c.jual*c.qty)}`).join('\n')}
+
+Subtotal: ${formatRp(total)}
+Diskon: ${formatRp(diskon)}
+TOTAL: ${formatRp(bayar)}
+Bayar: ${formatRp(bayarCustomer)}
+Kembali: ${formatRp(bayarCustomer-bayar)}
+
+Terima Kasih!`;
+
+  document.getElementById('strukBox').innerText = lastStruk;
+
+  saveAll();
+  cart=[];
+  document.getElementById('diskon').value='';
+  document.getElementById('bayarCustomer').value='';
+  updateCart();
+  updateSaldo();
+  renderProduk();
+  renderAllProduk();
+  alert('Transaksi berhasil! Saldo +'+formatRp(bayar));
+}
+
+function clearCart(){
+  cart=[];
+  document.getElementById('diskon').value='';
+  document.getElementById('bayarCustomer').value='';
+  updateCart();
+  updateTotal();
+  renderProduk();
+}
+
+function renderRiwayat(){
+  let html='';
+  riwayat.forEach(r=>{
+    html+=`<tr>
+      <td>${r.waktu}</td>
+      <td>${r.item}</td>
+      <td>${formatRp(r.total)}</td>
+      <td>${formatRp(r.untung)}</td>
+    </tr>`;
+  });
+  document.getElementById('riwayatList').innerHTML=html;
+}
+
+function simpanProfil(){
+  localStorage.setItem('namaToko',document.getElementById('namaToko').value);
+  localStorage.setItem('namaPemilik',document.getElementById('namaPemilik').value);
+  alert('Profil tersimpan');
+}
+
+function loadProfil(){
+  document.getElementById('namaToko').value=localStorage.getItem('namaToko')||'';
+  document.getElementById('namaPemilik').value=localStorage.getItem('namaPemilik')||'';
+}
+
+function resetData(){
+  if(confirm('Yakin hapus semua data?')) {
+    localStorage.clear();
+    location.reload();
+  }
+}
+
+// HANYA FUNGSI INI YANG DIUBAH
+function openPrint(){
+  if(!lastStruk){alert('Belum ada transaksi');return}
+  Android.printBluetooth(lastStruk);
+}
+
+// Init
+updateSaldo();
+renderProduk();
+renderAllProduk();
+renderRiwayat();
+loadProfil();
+updateCart();
+</script>
+
+</body>
+</html>

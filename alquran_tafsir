@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Al-Qur'an & Tafsir - Download Per Surah</title>
+
+  <!-- Google Fonts & FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    :root {
+      --primary: #0d9488;
+      --primary-dark: #0f766e;
+      --primary-light: #ccfbf1;
+      --bg-dark: #0f172a;
+      --card-dark: #1e293b;
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+      --arabic-font: 'Amiri', serif;
+      --accent-green: #22c55e;
+      --accent-blue: #38bdf8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      padding-bottom: 90px;
+    }
+
+    /* Header */
+    .header {
+      position: sticky;
+      top: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid #334155;
+      padding: 14px 16px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .app-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--primary-light);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .storage-info {
+      font-size: 11px;
+      color: var(--accent-green);
+      background: rgba(34, 197, 94, 0.1);
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+
+    .search-box {
+      position: relative;
+      width: 100%;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px 16px 10px 40px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      color: white;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-sub);
+    }
+
+    /* Layout Containers */
+    .container {
+      max-width: 768px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* Surah List Grid */
+    .surah-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 12px;
+    }
+
+    .surah-card {
+      background: var(--card-dark);
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .surah-card:hover {
+      border-color: var(--primary);
+    }
+
+    .surah-main-info {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      cursor: pointer;
+    }
+
+    .surah-number {
+      width: 38px;
+      height: 38px;
+      background: rgba(13, 148, 136, 0.15);
+      color: var(--primary-light);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .surah-info {
+      margin-left: 12px;
+    }
+
+    .surah-name-latin {
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--text-main);
+    }
+
+    .surah-meta {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 2px;
+    }
+
+    .surah-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+    }
+
+    .surah-arabic-title {
+      font-family: var(--arabic-font);
+      font-size: 20px;
+      color: var(--primary-light);
+    }
+
+    /* Download Buttons */
+    .btn-download {
+      background: rgba(13, 148, 136, 0.15);
+      color: var(--primary-light);
+      border: 1px solid var(--primary);
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s;
+    }
+
+    .btn-download:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-download.downloaded {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--accent-green);
+      border-color: var(--accent-green);
+    }
+
+    .btn-download.downloading {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+      border-color: #f59e0b;
+      pointer-events: none;
+    }
+
+    /* Detail View */
+    .view-container {
+      display: none;
+    }
+
+    .view-container.active {
+      display: block;
+    }
+
+    .surah-banner {
+      background: linear-gradient(135deg, var(--primary-dark), #042f2e);
+      border-radius: 20px;
+      padding: 24px;
+      text-align: center;
+      margin-bottom: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .banner-arabic {
+      font-family: var(--arabic-font);
+      font-size: 32px;
+      color: white;
+      margin-bottom: 8px;
+    }
+
+    .banner-translation {
+      font-size: 14px;
+      color: var(--primary-light);
+    }
+
+    .bismillah {
+      font-family: var(--arabic-font);
+      font-size: 28px;
+      text-align: center;
+      margin: 20px 0;
+      color: var(--primary-light);
+    }
+
+    /* Ayat Card */
+    .ayat-card {
+      background: var(--card-dark);
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .ayat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 8px 12px;
+      border-radius: 10px;
+    }
+
+    .ayat-badge {
+      background: var(--primary);
+      color: white;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .ayat-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-action {
+      background: transparent;
+      border: none;
+      color: var(--text-sub);
+      font-size: 14px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-action:hover {
+      color: var(--primary-light);
+      background: rgba(255,255,255,0.05);
+    }
+
+    .ayat-arabic {
+      font-family: var(--arabic-font);
+      font-size: 28px;
+      line-height: 2.2;
+      text-align: right;
+      direction: rtl;
+      color: #ffffff;
+      padding: 10px 0;
+    }
+
+    .ayat-latin {
+      font-size: 13px;
+      color: var(--primary-light);
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    .ayat-translation {
+      font-size: 14px;
+      color: #cbd5e1;
+      line-height: 1.6;
+    }
+
+    /* Modal Tafsir */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(5px);
+      z-index: 2000;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: #1e293b;
+      border-top-left-radius: 24px;
+      border-top-right-radius: 24px;
+      width: 100%;
+      max-width: 768px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      animation: slideUp 0.3s ease-out;
+      border-top: 1px solid #334155;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #334155;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary-light);
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      font-size: 14px;
+      line-height: 1.8;
+      color: #e2e8f0;
+      text-align: justify;
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      color: var(--text-sub);
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    /* Bottom Audio Player */
+    .audio-player-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: #0f172a;
+      border-top: 1px solid #334155;
+      padding: 10px 16px;
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .audio-player-bar.active {
+      display: flex;
+    }
+
+    .audio-info {
+      font-size: 12px;
+      color: var(--primary-light);
+    }
+
+    .btn-back {
+      background: #334155;
+      color: white;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0284c7;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 3000;
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .loading-spinner {
+      text-align: center;
+      padding: 40px;
+      color: var(--primary-light);
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast">
+    <i class="fa-solid fa-circle-info"></i> <span id="toast-msg">Notifikasi</span>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="top-bar">
+      <div class="app-title">
+        <i class="fa-solid fa-book-quran"></i> Al-Qur'an & Tafsir
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="storage-info" id="storage-size"><i class="fa-solid fa-hard-drive"></i> Terpakai: 0 MB</span>
+        <button class="btn-back" id="btn-back" style="display: none;" onclick="showSurahList()">
+          <i class="fa-solid fa-arrow-left"></i> Kembali
+        </button>
+      </div>
+    </div>
+    <div class="search-box" id="search-box">
+      <i class="fa-solid fa-magnifying-glass search-icon"></i>
+      <input type="text" id="search-input" class="search-input" placeholder="Cari surah (misal: Al-Ikhlas, Yasin)..." oninput="filterSurah()">
+    </div>
+  </header>
+
+  <!-- Container -->
+  <div class="container">
+    
+    <!-- View 1: List 114 Surah -->
+    <div id="view-surah-list" class="view-container active">
+      <div id="loading-surah" class="loading-spinner">
+        <i class="fa-solid fa-circle-notch fa-spin fa-2x"></i>
+        <div style="margin-top: 10px;">Memuat Daftar Surah...</div>
+      </div>
+      <div class="surah-grid" id="surah-container"></div>
+    </div>
+
+    <!-- View 2: Detail Surah & Tafsir -->
+    <div id="view-surah-detail" class="view-container">
+      <div id="loading-detail" class="loading-spinner">
+        <i class="fa-solid fa-circle-notch fa-spin fa-2x"></i>
+        <div style="margin-top: 10px;">Mengambil Surah & Tafsir...</div>
+      </div>
+
+      <div id="surah-detail-content" style="display: none;">
+        <div class="surah-banner">
+          <div class="banner-arabic" id="banner-arabic">---</div>
+          <h2 id="banner-title" style="font-size: 20px;">---</h2>
+          <div class="banner-translation" id="banner-info">---</div>
+        </div>
+
+        <div class="bismillah" id="bismillah-text">بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</div>
+
+        <div id="ayat-container"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Audio Player -->
+  <div class="audio-player-bar" id="audio-player-bar">
+    <div class="audio-info" id="audio-playing-title">Memutar Audio...</div>
+    <audio id="global-audio" controls style="height: 32px; outline: none;"></audio>
+  </div>
+
+  <!-- Modal Tafsir -->
+  <div class="modal-overlay" id="tafsir-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title" id="tafsir-modal-title">Tafsir Kemenag RI</div>
+        <button class="btn-close" onclick="closeTafsirModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="tafsir-modal-body">
+        Memuat data tafsir...
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let db;
+    let surahListData = [];
+    let downloadedSurahMap = new Set();
+    let currentSurahData = null;
+    let currentTafsirData = null;
+
+    // 1. Inisialisasi IndexedDB HP
+    function initDatabase() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open("QuranOfflineDB", 1);
+        request.onupgradeneeded = (e) => {
+          db = e.target.result;
+          if (!db.objectStoreNames.contains("surahStore")) {
+            db.createObjectStore("surahStore", { keyPath: "nomor" });
+          }
+          if (!db.objectStoreNames.contains("audioStore")) {
+            db.createObjectStore("audioStore", { keyPath: "key" });
+          }
+        };
+        request.onsuccess = (e) => {
+          db = e.target.result;
+          resolve(db);
+        };
+        request.onerror = (e) => reject(e);
+      });
+    }
+
+    // SIMPAN DATA KE INDEXEDDB
+    function saveToDB(storeName, data) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(storeName, "readwrite");
+        const store = tx.objectStore(storeName);
+        store.put(data);
+        tx.oncomplete = () => resolve();
+        tx.onerror = (e) => reject(e);
+      });
+    }
+
+    // AMBIL DATA DARI INDEXEDDB
+    function getFromDB(storeName, key) {
+      return new Promise((resolve) => {
+        const tx = db.transaction(storeName, "readonly");
+        const store = tx.objectStore(storeName);
+        const req = store.get(key);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => resolve(null);
+      });
+    }
+
+    // LOAD DAFTAR SURAH TERUNDUH
+    async function updateDownloadedMap() {
+      return new Promise((resolve) => {
+        const tx = db.transaction("surahStore", "readonly");
+        const store = tx.objectStore("surahStore");
+        const req = store.getAllKeys();
+        req.onsuccess = () => {
+          downloadedSurahMap = new Set(req.result);
+          calculateStorageUsage();
+          resolve();
+        };
+      });
+    }
+
+    // HITUNG TOTAL STORAGE TERPAKAI
+    async function calculateStorageUsage() {
+      if (navigator.storage && navigator.storage.estimate) {
+        const estimate = await navigator.storage.estimate();
+        const usageMB = (estimate.usage / (1024 * 1024)).toFixed(1);
+        document.getElementById('storage-size').innerHTML = `<i class="fa-solid fa-hard-drive"></i> Terpakai: ${usageMB} MB`;
+      }
+    }
+
+    // 2. Fetch List 114 Surah Utama
+    async function loadSurahList() {
+      await initDatabase();
+      await updateDownloadedMap();
+
+      try {
+        const response = await fetch('https://equran.id/api/v2/surat');
+        const result = await response.json();
+        surahListData = result.data;
+
+        document.getElementById('loading-surah').style.display = 'none';
+        renderSurahList(surahListData);
+      } catch (error) {
+        document.getElementById('loading-surah').innerHTML = 'Gagal memuat daftar surah. Periksa koneksi internet Anda.';
+      }
+    }
+
+    // Render List Surah
+    function renderSurahList(data) {
+      const container = document.getElementById('surah-container');
+      container.innerHTML = '';
+
+      data.forEach(surah => {
+        const isDownloaded = downloadedSurahMap.has(surah.nomor);
+
+        const card = document.createElement('div');
+        card.className = 'surah-card';
+        card.id = `surah-card-${surah.nomor}`;
+
+        card.innerHTML = `
+          <div class="surah-main-info" onclick="handleSurahClick(${surah.nomor})">
+            <div class="surah-number">${surah.nomor}</div>
+            <div class="surah-info">
+              <div class="surah-name-latin">${surah.namaLatin}</div>
+              <div class="surah-meta">${surah.tempatTurun} • ${surah.jumlahAyat} Ayat</div>
+            </div>
+          </div>
+          <div class="surah-right">
+            <div class="surah-arabic-title">${surah.nama}</div>
+            <button class="btn-download ${isDownloaded ? 'downloaded' : ''}" id="btn-dl-${surah.nomor}" onclick="event.stopPropagation(); downloadSingleSurah(${surah.nomor})">
+              <i class="${isDownloaded ? 'fa-solid fa-circle-check' : 'fa-solid fa-download'}"></i>
+              <span>${isDownloaded ? 'Tersimpan' : 'Unduh'}</span>
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Klik Surah -> Buka Langsung (Unduh Otomatis Jika Belum Ada)
+    async function handleSurahClick(nomorSurah) {
+      if (!downloadedSurahMap.has(nomorSurah)) {
+        // Jika Belum Terunduh, Jalankan Proses Unduh Dulu Lalu Buka
+        await downloadSingleSurah(nomorSurah, true);
+      } else {
+        openSurahDetail(nomorSurah);
+      }
+    }
+
+    // PROSES DOWNLOAD TUNGGAL SURAH (Teks + Tafsir + Audio Murottal)
+    async function downloadSingleSurah(nomorSurah, autoOpenAfterDownload = false) {
+      const btn = document.getElementById(`btn-dl-${nomorSurah}`);
+      const surahMeta = surahListData.find(s => s.nomor === nomorSurah);
+
+      if (downloadedSurahMap.has(nomorSurah) && !autoOpenAfterDownload) {
+        showToast(`Q.S ${surahMeta.namaLatin} Sudah Tersimpan di HP.`);
+        return;
+      }
+
+      if (btn) {
+        btn.className = "btn-download downloading";
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Mengunduh...</span>`;
+      }
+
+      try {
+        // 1. Download Data Surah & Tafsir dari API Kemenag
+        const [surahRes, tafsirRes] = await Promise.all([
+          fetch(`https://equran.id/api/v2/surat/${nomorSurah}`),
+          fetch(`https://equran.id/api/v2/tafsir/${nomorSurah}`)
+        ]);
+
+        const surahData = (await surahRes.json()).data;
+        const tafsirData = (await tafsirRes.json()).data.tafsir;
+
+        // 2. Download Seluruh Audio Murottal MP3 Per-Ayat untuk Offline Audio
+        for (let ayat of surahData.ayat) {
+          const audioUrl = ayat.audio['05']; // Reciter Misyari Rasyid
+          try {
+            const audioBlob = await fetch(audioUrl).then(r => r.blob());
+            await saveToDB("audioStore", { key: `${nomorSurah}_${ayat.nomorAyat}`, blob: audioBlob });
+          } catch (e) {
+            console.warn(`Audio Ayat ${ayat.nomorAyat} gagal diunduh:`, e);
+          }
+        }
+
+        // 3. Simpan Paket Teks & Tafsir ke IndexedDB HP
+        const fullPayload = {
+          nomor: nomorSurah,
+          surah: surahData,
+          tafsir: tafsirData,
+          downloadedAt: new Date().getTime()
+        };
+
+        await saveToDB("surahStore", fullPayload);
+        downloadedSurahMap.add(nomorSurah);
+
+        // Update UI Tombol
+        if (btn) {
+          btn.className = "btn-download downloaded";
+          btn.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>Tersimpan</span>`;
+        }
+
+        calculateStorageUsage();
+        showToast(`Q.S ${surahMeta.namaLatin} Berhasil Diunduh!`);
+
+        // Jika Di-klik oleh User, Langsung Buka Tampilan Surahnya
+        if (autoOpenAfterDownload) {
+          openSurahDetail(nomorSurah);
+        }
+
+      } catch (err) {
+        if (btn) {
+          btn.className = "btn-download";
+          btn.innerHTML = `<i class="fa-solid fa-download"></i> <span>Unduh</span>`;
+        }
+        showToast(`Gagal Mengunduh Surah. Cek Koneksi Internet.`);
+      }
+    }
+
+    // 3. Buka Halaman Surah
+    async function openSurahDetail(nomorSurah) {
+      document.getElementById('view-surah-list').classList.remove('active');
+      document.getElementById('view-surah-detail').classList.add('active');
+      document.getElementById('btn-back').style.display = 'flex';
+      document.getElementById('search-box').style.display = 'none';
+
+      document.getElementById('loading-detail').style.display = 'block';
+      document.getElementById('surah-detail-content').style.display = 'none';
+
+      window.scrollTo(0, 0);
+
+      // Ambil Dari Penyimpanan HP (IndexedDB)
+      const cachedData = await getFromDB("surahStore", nomorSurah);
+
+      if (cachedData) {
+        currentSurahData = cachedData.surah;
+        currentTafsirData = cachedData.tafsir;
+        renderSurahDetail(true);
+      } else {
+        // Fallback jika belum pernah diunduh
+        await downloadSingleSurah(nomorSurah, true);
+      }
+    }
+
+    // Render Ayat & Komponen View
+    function renderSurahDetail(fromOffline = false) {
+      const surah = currentSurahData;
+
+      document.getElementById('banner-arabic').innerText = surah.nama;
+      document.getElementById('banner-title').innerText = `${surah.namaLatin} (${surah.arti})`;
+      document.getElementById('banner-info').innerText = `${surah.tempatTurun} • ${surah.jumlahAyat} Ayat ${fromOffline ? '• [Offline]' : ''}`;
+
+      const bismillahElem = document.getElementById('bismillah-text');
+      if (surah.nomor === 1 || surah.nomor === 9) {
+        bismillahElem.style.display = 'none';
+      } else {
+        bismillahElem.style.display = 'block';
+      }
+
+      const container = document.getElementById('ayat-container');
+      container.innerHTML = '';
+
+      surah.ayat.forEach(ayat => {
+        const card = document.createElement('div');
+        card.className = 'ayat-card';
+        card.id = `ayat-${ayat.nomorAyat}`;
+
+        card.innerHTML = `
+          <div class="ayat-header">
+            <span class="ayat-badge">${surah.nomor}:${ayat.nomorAyat}</span>
+            <div class="ayat-actions">
+              <button class="btn-action" title="Putar Audio" onclick="playAyatAudio(${surah.nomor}, ${ayat.nomorAyat}, '${ayat.audio['05']}')">
+                <i class="fa-solid fa-circle-play"></i> Putar
+              </button>
+              <button class="btn-action" title="Baca Tafsir Lengkap" onclick="showTafsirModal(${ayat.nomorAyat})">
+                <i class="fa-solid fa-book-open"></i> Tafsir
+              </button>
+            </div>
+          </div>
+          <div class="ayat-arabic">${ayat.teksArab}</div>
+          <div class="ayat-latin">${ayat.teksLatin}</div>
+          <div class="ayat-translation">${ayat.teksIndonesia}</div>
+        `;
+        container.appendChild(card);
+      });
+
+      document.getElementById('loading-detail').style.display = 'none';
+      document.getElementById('surah-detail-content').style.display = 'block';
+    }
+
+    // Play Audio (Otomatis Ambil File Blob Offline Jika Ada)
+    async function playAyatAudio(surahNum, ayatNum, defaultUrl) {
+      const audioPlayer = document.getElementById('global-audio');
+      const audioBar = document.getElementById('audio-player-bar');
+      const audioTitle = document.getElementById('audio-playing-title');
+
+      audioTitle.innerText = `Memutar Q.S ${currentSurahData.namaLatin} : Ayat ${ayatNum}`;
+
+      // Cek File Audio Offline di IndexedDB
+      const offlineAudio = await getFromDB("audioStore", `${surahNum}_${ayatNum}`);
+
+      if (offlineAudio && offlineAudio.blob) {
+        audioPlayer.src = URL.createObjectURL(offlineAudio.blob);
+      } else {
+        audioPlayer.src = defaultUrl;
+      }
+
+      audioBar.classList.add('active');
+      audioPlayer.play();
+    }
+
+    // Tafsir Modal
+    function showTafsirModal(nomorAyat) {
+      const tafsirItem = currentTafsirData.find(t => t.ayat === nomorAyat);
+      const title = `${currentSurahData.namaLatin} : Ayat ${nomorAyat}`;
+
+      document.getElementById('tafsir-modal-title').innerText = `Tafsir Lengkap ${title}`;
+      
+      if (tafsirItem) {
+        document.getElementById('tafsir-modal-body').innerHTML = `
+          <div style="font-weight: 700; color: var(--primary-light); margin-bottom: 10px;">Tafsir Kemenag RI:</div>
+          <p>${tafsirItem.teks}</p>
+        `;
+      } else {
+        document.getElementById('tafsir-modal-body').innerText = 'Tafsir tidak ditemukan.';
+      }
+
+      document.getElementById('tafsir-modal').classList.add('active');
+    }
+
+    function closeTafsirModal() {
+      document.getElementById('tafsir-modal').classList.remove('active');
+    }
+
+    function filterSurah() {
+      const query = document.getElementById('search-input').value.toLowerCase();
+      const filtered = surahListData.filter(s => 
+        s.namaLatin.toLowerCase().includes(query) || 
+        s.nomor.toString().includes(query)
+      );
+      renderSurahList(filtered);
+    }
+
+    function showSurahList() {
+      document.getElementById('view-surah-detail').classList.remove('active');
+      document.getElementById('view-surah-list').classList.active = true;
+      document.getElementById('view-surah-list').classList.add('active');
+      document.getElementById('btn-back').style.display = 'none';
+      document.getElementById('search-box').style.display = 'block';
+
+      const audioPlayer = document.getElementById('global-audio');
+      audioPlayer.pause();
+      document.getElementById('audio-player-bar').classList.remove('active');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').innerText = msg;
+      toast.style.display = 'flex';
+      setTimeout(() => { toast.style.display = 'none'; }, 3000);
+    }
+
+    window.onload = loadSurahList;
+  </script>
+</body>
+</html>

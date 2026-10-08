@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=350, height=150">
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 350px;
+    height: 150px;
+    background: transparent;
+    overflow: hidden;
+    position: relative;
+    font-family: 'Arial Black', Arial, sans-serif;
+  }
+
+  /* Atas: Jam */
+ .top {
+    height: 90px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    border-bottom: 1px solid #30000;
+  }
+
+ .clock {
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    color: #FF0000;
+    text-shadow: 
+      0 0 0 #12FF04,
+      1px 0 0 #011AFF, -1px 0 0 #011AFF, 0 1px 0 #12FF04, 0 -1px 0 #12FF04,
+      2px 0 0 #12FF04, -2px 0 0 #12FF04, 0 2px 0 #12FF04, 0 -2px 0 #12FF04,
+      1px 1px 0 #12FF04, -1px -1px 0 #12FF04, 1px -1px 0 #12FF04, -1px 1px 0 #12FF04,
+      0 0 4px #12FF04, 0 0 8px #12FF04;
+    filter: blur(0.3px);
+  }
+
+ .clock .blink {
+    animation: blink 1s infinite;
+  }
+
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0.3; }
+  }
+
+ .date {
+    font-size: 11px;
+    color: #FF0000;
+    margin-top: 2px;
+    text-shadow: 0 0 2px #FF0000, 0 0 4px #FF0000;
+  }
+
+ .location {
+    font-size: 10px;
+    color: #12FF04;
+    margin-top: 2px;
+    text-shadow: 0 0 2px #12FF04;
+  }
+
+  /* Bawah: Running text */
+ .bottom {
+    height: 60px;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+  }
+
+ .marquee {
+    display: flex;
+    white-space: nowrap;
+    animation: marquee 40s linear infinite;
+  }
+
+ .marquee-item {
+    font-size: 18px;
+    margin-right: 40px;
+    font-weight: 900;
+    color: #FF0000;
+    text-shadow: 
+      0 0 0 #011AFF,
+      1px 0 0 #011AFF, -1px 0 0 #011AFF, 0 1px 0 #011AFF, 0 -1px 0 #FF0000,
+      1px 1px 0 #FF0000, -1px -1px 0 #FF0000,
+      0 0 3px #FF0000, 0 0 6px #FF0000;
+  }
+
+ .marquee-item .name {
+    color: #FFFF00;
+    margin-right: 8px;
+  }
+
+  @keyframes marquee {
+    0% { transform: translateX(100%); }
+    60% { transform: translateX(-100%); }
+  }
+
+  /* Overlay Waktu Sholat */
+ .adhan-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+  }
+
+ .adhan-overlay.show {
+    display: flex;
+  }
+
+ .adhan-text {
+    font-size: 28px;
+    font-weight: 900;
+    color: #FF0000;
+    text-align: center;
+    animation: pulse 1s infinite;
+    text-shadow: 
+      0 0 0 #FF0000,
+      1px 0 0 #FF0000, -1px 0 0 #FF0000, 0 1px 0 #FF0000, 0 -1px 0 #FF0000,
+      2px 0 0 #FF0000, -2px 0 0 #FF0000,
+      0 0 5px #FF0000, 0 0 10px #FF0000;
+  }
+
+ .adhan-sub {
+    font-size: 14px;
+    color: #FF0000;
+    margin-top: 8px;
+    text-shadow: 0 0 3px #FF0000;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+  }
+</style>
+</head>
+<body>
+
+  <div class="top">
+    <div class="clock" id="clock"></div>
+    <div class="date" id="date">-</div>
+    <div class="location" id="location">Loading...</div>
+  </div>
+
+  <div class="bottom">
+    <div class="marquee" id="marquee">Loading jadwal...</div>
+  </div>
+
+  <!-- Overlay Adzan -->
+  <div class="adhan-overlay" id="adhanOverlay">
+    <div class="adhan-text" id="adhanText">WAKTU SHALAT SUBUH</div>
+    <div class="adhan-sub">Silahkan bersiap untuk sholat</div>
+  </div>
+
+<script>
+let prayerTimes = {};
+let adhanShown = false;
+
+// Jam dengan kedip dan detik
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  const s = String(now.getSeconds()).padStart(2, '0');
+  
+  document.getElementById('clock').innerHTML = `${h}<span class="blink">:</span>${m}<span class="blink">:</span>${s}`;
+  document.getElementById('date').textContent = now.toLocaleDateString('id-ID', {weekday:'short', day:'numeric', month:'short'});
+
+  checkAdhanTime(h + ':' + m);
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function checkAdhanTime(currentTime) {
+  if (!prayerTimes.Fajr || adhanShown) return;
+
+  const prayerList = [
+    {name: 'SUBUH', time: prayerTimes.Fajr},
+    {name: 'DZUHUR', time: prayerTimes.Dhuhr},
+    {name: 'ASHAR', time: prayerTimes.Asr},
+    {name: 'MAGHRIB', time: prayerTimes.Maghrib},
+    {name: 'ISYA', time: prayerTimes.Isha}
+  ];
+
+  for (let p of prayerList) {
+    if (p.time === currentTime) {
+      showAdhan(p.name);
+      adhanShown = true;
+      setTimeout(() => { adhanShown = false; }, 60000);
+      break;
+    }
+  }
+}
+
+function showAdhan(prayerName) {
+  document.getElementById('adhanText').textContent = `WAKTU SHALAT ${prayerName}`;
+  document.getElementById('adhanOverlay').classList.add('show');
+  setTimeout(() => {
+    document.getElementById('adhanOverlay').classList.remove('show');
+  }, 60000);
+}
+
+// GPS + Jadwal Sholat
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+
+      try {
+        const loc = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+        const locData = await loc.json();
+        document.getElementById('location').textContent = locData.address.city || locData.address.regency || 'Lokasi';
+      } catch {
+        document.getElementById('location').textContent = 'Online';
+      }
+
+      getPrayerTimes(lat, lng);
+    },
+    () => getPrayerTimes(-6.2088, 106.8456)
+  );
+} else {
+  getPrayerTimes(-6.2088, 106.8456);
+}
+
+async function getPrayerTimes(lat, lng) {
+  try {
+    const today = new Date();
+    const date = `${today.getDate()}-${today.getMonth()+1}-${today.getFullYear()}`;
+    const res = await fetch(`https://api.aladhan.com/v1/timings/${date}?latitude=${lat}&longitude=${lng}&method=2`);
+    const data = await res.json();
+    const t = data.data.timings;
+    
+    prayerTimes = t;
+
+    const prayers = [
+      {name: 'Subuh', time: t.Fajr},
+      {name: 'Dzuhur', time: t.Dhuhr},
+      {name: 'Ashar', time: t.Asr},
+      {name: 'Maghrib', time: t.Maghrib},
+      {name: 'Isya', time: t.Isha},
+      {name: 'Subuh', time: t.Fajr}
+    ];
+
+    let html = '';
+    prayers.forEach(p => {
+      html += `<div class="marquee-item"><span class="name">${p.name}</span><span class="time">${p.time}</span></div>`;
+    });
+
+    document.getElementById('marquee').innerHTML = html;
+  } catch {
+    document.getElementById('marquee').innerHTML = '<div class="marquee-item">Gagal load</div>';
+  }
+}
+</script>
+
+</body>
+</html>

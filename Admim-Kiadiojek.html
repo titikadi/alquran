@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin KiadiOjek</title>
+  <style>
+    :root { --primary:#00AA13; --bg:#f0f0f0; --card:#fff; --text:#333; --danger:#dc3545; --warning:#ffc107; --info:#0d6efd;}
+    [data-theme="dark"] { --primary:#00AA13; --bg:#121212; --card:#1e1e1e; --text:#eee; }
+    *{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif}
+    body{background:var(--bg);color:var(--text);transition:.3s;padding-bottom:70px}
+    .hidden{display:none!important}
+    .header{background:var(--primary);color:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+    .container{padding:12px}
+    .card{background:var(--card);margin:8px 0;padding:16px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+    .btn{background:var(--primary);color:white;border:none;padding:10px 16px;border-radius:8px;font-weight:bold;cursor:pointer;margin:4px}
+    .btn-danger{background:var(--danger)}
+    .btn-warning{background:var(--warning);color:#000}
+    .btn-info{background:var(--info)}
+    .btn:disabled{background:#ccc;cursor:not-allowed}
+    .btn-row{display:flex;gap:8px;flex-wrap:wrap}
+    input,select,textarea{width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:8px;background:var(--card);color:var(--text)}
+    label{font-weight:bold;font-size:14px;color:#666;display:block;margin-top:8px}
+    .auth-page{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--primary);z-index:1000;display:flex;align-items:center;justify-content:center}
+    .auth-box{background:var(--card);padding:24px;border-radius:16px;width:90%;max-width:400px}
+    .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);display:flex;justify-content:space-around;padding:8px 0;box-shadow:0 -2px 8px rgba(0,0,0,0.1);z-index:999}
+    .nav-item{text-align:center;font-size:12px;color:#666;cursor:pointer;opacity:0.6}
+    .nav-item.active{color:var(--primary);font-weight:bold;background:rgba(0,170,19,0.1);opacity:1}
+    .nav-icon{width:24px;height:24px;margin-bottom:2px}
+    .order-info{display:flex;justify-content:space-between;margin:4px 0;font-size:14px;color:#666}
+    .empty{text-align:center;padding:40px;color:#999}
+    .badge{background:var(--danger);color:white;border-radius:10px;padding:2px 6px;font-size:12px;position:absolute;top:0;right:8px}
+    .status-badge{padding:4px 8px;border-radius:6px;font-size:12px;font-weight:bold}
+    .status-baru{background:#f8d7da;color:#721c24}
+    .status-diproses{background:#fff3cd;color:#856404}
+    .status-selesai{background:#d4edda;color:#155724}
+    .status-pending{background:#fff3cd;color:#856404}
+    .status-success{background:#d4edda;color:#155724}
+    .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:12px 0}
+    .stat-card{background:var(--primary);color:white;padding:16px;border-radius:12px;text-align:center}
+    .stat-num{font-size:24px;font-weight:bold}
+    .driver-img{width:60px;height:60px;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid var(--primary)}
+    .row{display:flex;gap:8px}
+    .row input{flex:1}
+    .loading{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;color:white;font-size:18px}
+  </style>
+</head>
+<body data-theme="light">
+
+  <div id="loading" class="loading hidden">Loading...</div>
+
+  <!-- HALAMAN LOGIN -->
+  <div id="loginPage" class="auth-page">
+    <div class="auth-box">
+      <h2 style="text-align:center;color:var(--primary)">👑 LOGIN ADMIN</h2>
+      <input type="email" id="loginEmail" placeholder="Email Admin">
+      <input type="password" id="loginPassword" placeholder="Password">
+      <button class="btn" onclick="loginAdmin()">MASUK</button>
+    </div>
+  </div>
+
+  <!-- HALAMAN UTAMA -->
+  <div id="mainApp" class="hidden">
+    <div class="header">
+      <h1> Admin Kiadi</h1>
+      <button class="btn btn-danger" onclick="logout()" style="padding:8px 12px">LOGOUT</button>
+    </div>
+
+    <div id="pageDashboard" class="container">
+      <h3>Dashboard</h3>
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-num" id="totalDriver">0</div>
+          <div>Total Driver</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="totalOrder">0</div>
+          <div>Order Selesai</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="totalKomisi">Rp 0</div>
+          <div>Total Komisi</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="totalTopupPending">0</div>
+          <div>Topup Pending</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="pageDriver" class="container hidden">
+      <h3>Kelola Driver</h3>
+      <div id="listDriver"><div class="empty">Loading...</div></div>
+    </div>
+
+    <div id="pageOrder" class="container hidden">
+      <h3>Riwayat Order Selesai</h3>
+      <div id="listOrder"><div class="empty">Belum ada order</div></div>
+    </div>
+
+    <div id="pageTopup" class="container hidden">
+      <h3>Request Top Up Driver</h3>
+      <div id="listTopup"><div class="empty">Belum ada request</div></div>
+    </div>
+
+    <div id="pageAduan" class="container hidden">
+      <h3>Pengaduan Driver</h3>
+      <div id="listAduan"><div class="empty">Belum ada pengaduan</div></div>
+    </div>
+
+    <!-- PAGE TARIF BARU -->
+    <div id="pageTarif" class="container hidden">
+      <h3>💰 Setting Tarif Ongkos</h3>
+      
+      <div class="card">
+        <h4>Tarif Default - Semua Wilayah</h4>
+        <label>Tarif Dasar (2km pertama) Rp</label>
+        <input type="number" id="tarifDasar" placeholder="6000" value="6000">
+        
+        <label>Tarif Per KM Selanjutnya Rp</label>
+        <input type="number" id="tarifPerKm" placeholder="2000" value="2000">
+        
+        <label>Jarak Minimal (km)</label>
+        <input type="number" id="jarakMinimal" placeholder="2" step="0.1" value="2">
+        
+        <label>Tarif Minimal Order Rp</label>
+        <input type="number" id="tarifMinimal" placeholder="8000" value="8000">
+        
+        <label>Pembulatan Ke</label>
+        <select id="pembulatan">
+          <option value="100">100</option>
+          <option value="500" selected>500</option>
+          <option value="1000">1000</option>
+        </select>
+        
+        <button class="btn" onclick="simpanTarifDefault()">💾 SIMPAN TARIF DEFAULT</button>
+        <small style="color:var(--danger);display:block;margin-top:8px">*Berlaku untuk semua wilayah kecuali ada setting kota khusus</small>
+      </div>
+
+      <div class="card">
+        <h4>🏙️ Tarif Khusus Per Kota</h4>
+        <input type="text" id="namaKota" placeholder="Nama Kota: Jakarta, Bandung, Medan">
+        <div class="row">
+          <input type="number" id="kotaTarifDasar" placeholder="Tarif Dasar">
+          <input type="number" id="kotaTarifPerKm" placeholder="Per KM">
+        </div>
+        <div class="row">
+          <input type="number" id="kotaJarakMinimal" placeholder="Jarak Min" step="0.1">
+          <input type="number" id="kotaTarifMinimal" placeholder="Tarif Min">
+        </div>
+        <button class="btn" onclick="tambahTarifKota()">➕ TAMBAH/UPDATE KOTA</button>
+      </div>
+
+      <div class="card">
+        <h4>📋 Daftar Tarif Kota</h4>
+        <button class="btn btn-info" onclick="listenTarifKota()" style="width:auto;margin-bottom:8px">🔄 RELOAD LIST</button>
+        <div id="listTarifKota"><p class="empty">Klik RELOAD kalo kosong</p></div>
+      </div>
+    </div>
+
+    <!-- BOTTOM NAV UDAH PAKE ICON SVG ASLI -->
+    <div class="bottom-nav">
+      <div class="nav-item active" onclick="switchPage('Dashboard')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="#00AA13"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg><br>Dashboard
+      </div>
+      <div class="nav-item" onclick="switchPage('Driver')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="#999"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg><br>Driver
+      </div>
+      <div class="nav-item" onclick="switchPage('Order')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="#999"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg><br>Order
+      </div>
+      <div class="nav-item" style="position:relative" onclick="switchPage('Topup')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="#999"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg><br>Topup <span id="badgeTopup" class="badge hidden">0</span>
+      </div>
+      <div class="nav-item" style="position:relative" onclick="switchPage('Aduan')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="#999"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg><br>Aduan <span id="badgeAduan" class="badge hidden">0</span>
+      </div>
+      <div class="nav-item" onclick="switchPage('Tarif')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="#999"><path d="M12 2C6.48 2 6.48 2 12s4.48 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z"/></svg><br>Tarif
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { getFirestore, doc, getDoc, updateDoc, setDoc, deleteDoc, collection, query, where, onSnapshot, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyB_NCFRSw2RHE3rLHei9tiSYRrkOQoPhzA",
+      authDomain: "kiadin.firebaseapp.com",
+      projectId: "kiadin",
+      storageBucket: "kiadin.firebasestorage.app",
+      messagingSenderId: "598659347073",
+      appId: "1:598659347073:web:befad4319ad98c83a45380",
+      measurementId: "G-LHB2W95ZJT"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // GANTI INI PAKE UID ADMIN LU DARI FIREBASE AUTH
+    const ADMIN_UID = "FgX4WhUK08MliClOff1hoes8OFx1";
+
+    function showLoading(show) {
+      document.getElementById('loading').classList.toggle('hidden', !show);
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user && user.uid === ADMIN_UID) {
+        showPage('mainApp');
+        loadDashboard();
+        listenTopup();
+        listenAduan();
+        listenDriver();
+        listenOrder();
+        loadTarifDefault();
+        listenTarifKota();
+      } else if (user) {
+        alert('Lu bukan admin bro!');
+        signOut(auth);
+      } else {
+        showPage('loginPage');
+      }
+    });
+
+    window.loginAdmin = async () => {
+      try {
+        showLoading(true);
+        await signInWithEmailAndPassword(auth, loginEmail.value, loginPassword.value);
+      } catch(e) { 
+        alert('Login gagal: ' + e.message); 
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    function loadDashboard() {
+      onSnapshot(collection(db, "drivers"), (snap) => {
+        document.getElementById('totalDriver').textContent = snap.size;
+      });
+
+      const qOrder = query(collection(db, "orders"), where("status", "==", "selesai"));
+      onSnapshot(qOrder, (snap) => {
+        document.getElementById('totalOrder').textContent = snap.size;
+        let totalKomisi = 0;
+        snap.forEach(doc => {
+          totalKomisi += doc.data().komisi || 0;
+        });
+        document.getElementById('totalKomisi').textContent = 'Rp ' + totalKomisi.toLocaleString('id-ID');
+      });
+    }
+
+    // TARIF FUNCTIONS - UDAH GW FIX
+    async function loadTarifDefault() {
+      try {
+        const docSnap = await getDoc(doc(db, "settings", "tarif_default"));
+        if (docSnap.exists()) {
+          const d = docSnap.data();
+          tarifDasar.value = d.tarifDasar || 6000;
+          tarifPerKm.value = d.tarifPerKm || 2000;
+          jarakMinimal.value = d.jarakMinimal || 2;
+          tarifMinimal.value = d.tarifMinimal || 8000;
+          pembulatan.value = d.pembulatan || 500;
+        }
+      } catch(e) {
+        console.log('Error load tarif:', e);
+      }
+    }
+
+    window.simpanTarifDefault = async () => {
+      try {
+        showLoading(true);
+        await setDoc(doc(db, "settings", "tarif_default"), {
+          tarifDasar: parseInt(tarifDasar.value) || 6000,
+          tarifPerKm: parseInt(tarifPerKm.value) || 2000,
+          jarakMinimal: parseFloat(jarakMinimal.value) || 2,
+          tarifMinimal: parseInt(tarifMinimal.value) || 8000,
+          pembulatan: parseInt(pembulatan.value) || 500,
+          updatedAt: serverTimestamp()
+        });
+        alert('✅ Tarif telah diperbarui!\nSemua customer langsung pake tarif baru.');
+      } catch(e) {
+        alert('❌ Gagal simpan tarif: ' + e.message);
+        console.error(e);
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    window.tambahTarifKota = async () => {
+      if(!namaKota.value) return alert('Isi nama kota dulu bro');
+      if(!kotaTarifDasar.value || !kotaTarifPerKm.value) return alert('Isi tarif dasar & per KM dulu');
+      
+      try {
+        showLoading(true);
+        await setDoc(doc(db, "tarif_kota", namaKota.value), {
+          tarifDasar: parseInt(kotaTarifDasar.value),
+          tarifPerKm: parseInt(kotaTarifPerKm.value),
+          jarakMinimal: parseFloat(kotaJarakMinimal.value) || 2,
+          tarifMinimal: parseInt(kotaTarifMinimal.value) || 8000,
+          pembulatan: 500,
+          updatedAt: serverTimestamp()
+        });
+        alert(`✅ Tarif ${namaKota.value} berhasil ditambahkan/diupdate!`);
+        namaKota.value = kotaTarifDasar.value = kotaTarifPerKm.value = kotaJarakMinimal.value = kotaTarifMinimal.value = '';
+      } catch(e) {
+        alert('❌ Gagal tambah kota: ' + e.message);
+        console.error(e);
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    window.listenTarifKota = () => {
+      onSnapshot(collection(db, "tarif_kota"), (snap) => {
+        listTarifKota.innerHTML = '';
+        if(snap.empty) {
+          listTarifKota.innerHTML = '<p class="empty">Belum ada tarif kota. Tambah di atas bro.</p>';
+          return;
+        }
+        snap.forEach((docSnap) => {
+          const kota = docSnap.id;
+          const d = docSnap.data();
+          listTarifKota.innerHTML += `
+            <div style="border:1px solid #ddd;padding:8px;margin:8px 0;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <b>${kota}</b><br>
+                <small>Dasar: Rp${d.tarifDasar.toLocaleString('id-ID')} | PerKM: Rp${d.tarifPerKm.toLocaleString('id-ID')} | Min: Rp${d.tarifMinimal.toLocaleString('id-ID')}</small>
+              </div>
+              <button class="btn-danger" style="width:auto;padding:6px 12px" onclick="hapusKota('${kota}')">HAPUS</button>
+            </div>`;
+        });
+      }, (error) => {
+        console.error('Error listen:', error);
+        listTarifKota.innerHTML = '<p class="empty" style="color:red">Error load data. Cek console.</p>';
+      });
+    }
+
+    window.hapusKota = async (kota) => {
+      if(confirm(`Hapus tarif ${kota}? Customer di ${kota} bakal pake tarif default.`)) {
+        try {
+          showLoading(true);
+          await deleteDoc(doc(db, "tarif_kota", kota));
+          alert(`✅ Tarif ${kota} dihapus`);
+        } catch(e) {
+          alert('❌ Gagal hapus: ' + e.message);
+        } finally {
+          showLoading(false);
+        }
+      }
+    }
+
+    // FUNGSI LAMA LU - GA ADA YANG GW KURANGIN
+    function listenDriver() {
+      onSnapshot(collection(db, "drivers"), (snap) => {
+        listDriver.innerHTML = '';
+        if(snap.empty) {
+          listDriver.innerHTML = '<div class="empty">Belum ada driver</div>';
+          return;
+        }
+        snap.forEach((docSnap) => {
+          const d = docSnap.data();
+          let statusColor = d.status === 'verified'? 'var(--primary)' : d.status === 'rejected'? 'var(--danger)' : 'var(--warning)';
+          listDriver.innerHTML += `
+            <div class="card">
+              <div style="display:flex;gap:12px">
+                <img src="${d.fotoWajah}" class="driver-img" onclick="lihatFoto('${d.fotoWajah}', 'Foto Wajah - ${d.nama}')">
+                <div style="flex:1">
+                  <h4>${d.nama}</h4>
+                  <div class="order-info"><span>📱 WA:</span><b>${d.wa}</b></div>
+                  <div class="order-info"><span>📧 Email:</span><b>${d.email}</b></div>
+                  <div class="order-info"><span>🚗 Kendaraan:</span><b>${d.kendaraan} - ${d.plat} (${d.warna})</b></div>
+                  <div class="order-info"><span>🚻 Gender:</span><b>${d.gender}</b></div>
+                  <div class="order-info"><span>📍 Alamat:</span><b>${d.alamat}</b></div>
+                  <div class="order-info"><span>💰 Saldo:</span><b style="color:${d.saldo<0?'var(--danger)':'var(--primary)'}">Rp ${(d.saldo||0).toLocaleString('id-ID')}</b></div>
+                  <div class="order-info"><span>📊 Status:</span><b style="color:${statusColor}">${d.status.toUpperCase()}</b></div>
+                </div>
+              <div class="btn-row" style="margin-top:8px">
+                <button class="btn btn-info" onclick="lihatFoto('${d.fotoWajah}', 'Foto Wajah - ${d.nama}')">👤 FOTO WAJAH</button>
+                <button class="btn btn-info" onclick="lihatFoto('${d.fotoKTP}', 'Foto KTP - ${d.nama}')">🪪 FOTO KTP</button>
+                ${d.status==='pending'? `<button class="btn" onclick="verifyDriver('${docSnap.id}','verified')">✅ VERIFIKASI</button>
+                <button class="btn btn-danger" onclick="tolakDriver('${docSnap.id}')">❌ TOLAK</button>` : ''}
+                ${d.status==='verified'? `<button class="btn btn-danger" onclick="verifyDriver('${docSnap.id}','rejected')">BLOKIR</button>` : ''}
+                ${d.status==='rejected'? `<button class="btn" onclick="verifyDriver('${docSnap.id}','verified')">UNBLOCK</button>` : ''}
+              </div>
+            </div>`;
+        });
+      });
+    }
+
+    window.lihatFoto = (url, judul) => {
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+      modal.innerHTML = `
+        <div style="background:white;padding:16px;border-radius:12px;max-width:90%;max-height:90%;overflow:auto;text-align:center">
+          <h3 style="margin-bottom:12px;color:#333">${judul}</h3>
+          <img src="${url}" style="width:100%;max-width:500px;border-radius:8px;border:2px solid #ddd">
+          <button class="btn btn-danger" onclick="this.parentElement.parentElement.remove()" style="margin-top:12px;width:100%">TUTUP</button>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    window.verifyDriver = async (id, status) => {
+      await updateDoc(doc(db, "drivers", id), { status: status });
+      alert(status==='verified'? 'Driver diverifikasi' : 'Driver diblokir');
+    }
+
+    window.tolakDriver = async (id) => {
+      const alasan = prompt('Alasan tolak:');
+      if(!alasan) return;
+      await updateDoc(doc(db, "drivers", id), { status: 'rejected', alasan: alasan });
+      alert('Driver ditolak');
+    }
+
+    function listenOrder() {
+      const q = query(collection(db, "orders"), where("status", "==", "selesai"));
+      onSnapshot(q, (snap) => {
+        listOrder.innerHTML = '';
+        if(snap.empty) {
+          listOrder.innerHTML = '<div class="empty">Belum ada order</div>';
+          return;
+        }
+        snap.forEach((docSnap) => {
+          const o = docSnap.data();
+          const tgl = o.selesaiAt?.toDate().toLocaleString('id-ID') || '-';
+          listOrder.innerHTML += `
+            <div class="card">
+              <div class="order-info"><span>📅 ${tgl}</span><b>${o.driverName||'Driver'}</b></div>
+              <div class="order-info"><span>📍 Jemput:</span><b>${o.pickupAddr}</b></div>
+              <div class="order-info"><span>🎯 Antar:</span><b>${o.destAddr}</b></div>
+              <div class="order-info"><span>💰 Ongkos:</span><b>Rp ${o.harga.toLocaleString('id-ID')}</b></div>
+              <div class="order-info"><span>💸 Komisi 10%:</span><b style="color:var(--primary)">Rp ${(o.komisi||0).toLocaleString('id-ID')}</b></div>
+            </div>`;
+        });
+      });
+    }
+
+    function listenTopup() {
+      onSnapshot(collection(db, "topup"), (snap) => {
+        listTopup.innerHTML = '';
+        let pending = 0;
+        if(snap.empty) {
+          listTopup.innerHTML = '<div class="empty">Belum ada request</div>';
+          badgeTopup.classList.add('hidden');
+          document.getElementById('totalTopupPending').textContent = 0;
+          return;
+        }
+        snap.forEach((docSnap) => {
+          const t = docSnap.data();
+          const tgl = t.createdAt?.toDate().toLocaleString('id-ID') || '-';
+          if(t.status === 'pending') pending++;
+          
+          let statusBadge = t.status === 'success'? 'status-success' : t.status === 'rejected'? 'status-baru' : 'status-pending';
+          let statusText = t.status === 'success'? 'Berhasil' : t.status === 'rejected'? 'Ditolak' : 'Pending';
+          
+          listTopup.innerHTML += `
+            <div class="card">
+              <div class="order-info"><span>👤 ${t.driverName}</span><span class="status-badge ${statusBadge}">${statusText}</span></div>
+              <div class="order-info"><span>📅 ${tgl}</span><b style="color:var(--primary);font-size:18px">Rp ${t.nominal.toLocaleString('id-ID')}</b></div>
+              ${t.status==='pending'? `<div class="btn-row" style="margin-top:8px">
+                <button class="btn" onclick="approveTopup('${docSnap.id}', ${t.nominal}, '${t.driverId}')">✅ APPROVE</button>
+                <button class="btn btn-danger" onclick="rejectTopup('${docSnap.id}')">❌ TOLAK</button>
+              </div>` : ''}
+              ${t.alasan? `<small style="color:var(--danger)">Alasan: ${t.alasan}</small>` : ''}
+            </div>`;
+        });
+        document.getElementById('totalTopupPending').textContent = pending;
+        if(pending > 0) {
+          badgeTopup.textContent = pending;
+          badgeTopup.classList.remove('hidden');
+        } else {
+          badgeTopup.classList.add('hidden');
+        }
+      });
+    }
+
+    window.approveTopup = async (id, nominal, driverId) => {
+      if(!confirm(`Approve topup Rp ${nominal.toLocaleString('id-ID')}? Pastikan driver udah transfer ke GoPay lu!`)) return;
+      
+      await updateDoc(doc(db, "topup", id), { status: 'success', approvedAt: serverTimestamp() });
+      
+      const driverDoc = await getDoc(doc(db, "drivers", driverId));
+      const saldoLama = driverDoc.data().saldo || 0;
+      await updateDoc(doc(db, "drivers", driverId), { saldo: saldoLama + nominal });
+      
+      alert('Topup berhasil! Saldo driver udah nambah');
+    }
+
+    window.rejectTopup = async (id) => {
+      const alasan = prompt('Alasan tolak topup:');
+      if(!alasan) return;
+      await updateDoc(doc(db, "topup", id), { status: 'rejected', alasan: alasan });
+      alert('Topup ditolak');
+    }
+
+    function listenAduan() {
+      onSnapshot(collection(db, "aduan"), (snap) => {
+        listAduan.innerHTML = '';
+        let baru = 0;
+        if(snap.empty) {
+          listAduan.innerHTML = '<div class="empty">Belum ada pengaduan</div>';
+          badgeAduan.classList.add('hidden');
+          return;
+        }
+        snap.forEach((docSnap) => {
+          const a = docSnap.data();
+          const tgl = a.createdAt?.toDate().toLocaleString('id-ID') || '-';
+          if(a.status === 'baru') baru++;
+          
+          let statusClass = 'status-baru';
+          if(a.status === 'diproses') statusClass = 'status-diproses';
+          if(a.status === 'selesai') statusClass = 'status-selesai';
+          
+          listAduan.innerHTML += `
+            <div class="card">
+              <div class="order-info"><span>📅 ${tgl}</span><span class="status-badge ${statusClass}">${a.status.toUpperCase()}</span></div>
+              <p style="margin:8px 0;padding:8px;background:#f5f5f5;border-radius:6px;color:#333">${a.isi}</p>
+              ${a.balasanAdmin? `<div style="margin:8px 0;padding:8px;background:#e8f5e9;border-radius:6px;color:#333"><b>Balasan lu:</b><br>${a.balasanAdmin}</div>` : ''}
+                            ${a.status!=='selesai' && a.status!=='ditolak'? `<div class="btn-row" style="margin-top:8px">
+                <button class="btn btn-info" onclick="balasAduan('${docSnap.id}')">💬 BALAS</button>
+                <button class="btn" onclick="updateAduan('${docSnap.id}','selesai')">✅ SELESAI</button>
+                <button class="btn btn-danger" onclick="tolakAduan('${docSnap.id}')">❌ TOLAK</button>
+              </div>` : ''}
+            </div>`;
+        });
+        if(baru > 0) {
+          badgeAduan.textContent = baru;
+          badgeAduan.classList.remove('hidden');
+        } else {
+          badgeAduan.classList.add('hidden');
+        }
+      });
+    }
+
+    window.balasAduan = async (id) => {
+      const balasan = prompt('Balas pengaduan driver:');
+      if(!balasan) return;
+      await updateDoc(doc(db, "aduan", id), { balasanAdmin: balasan, status: 'diproses' });
+      alert('Balasan terkirim ke driver');
+    }
+
+    window.updateAduan = async (id, status) => {
+      await updateDoc(doc(db, "aduan", id), { status: status });
+      alert('Status pengaduan diupdate');
+    }
+
+    window.tolakAduan = async (id) => {
+      const alasan = prompt('Alasan tolak pengaduan:');
+      if(!alasan) return;
+      await updateDoc(doc(db, "aduan", id), { status: 'ditolak', alasan: alasan });
+      alert('Pengaduan ditolak');
+    }
+
+    window.showPage = (id) => {
+      document.querySelectorAll('.auth-page, #mainApp').forEach(el => el.classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+    }
+    window.switchPage = (page) => {
+      document.querySelectorAll('[id^=page]').forEach(el => el.classList.add('hidden'));
+      document.getElementById('page'+page).classList.remove('hidden');
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      event.target.closest('.nav-item').classList.add('active');
+    }
+    window.logout = () => signOut(auth);
+  </script>
+</body>
+</html>

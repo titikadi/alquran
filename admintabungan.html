@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel - Keuangan+</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+body{background:#121212;color:#fff}
+.hide{display:none!important}
+.login-box{max-width:400px;margin:100px auto;padding:30px;background:#1e1e1e;border-radius:12px}
+
+input,button,textarea,select{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:none;font-size:16px}
+input,textarea,select{background:#2a2a2a;color:#fff;border:1px solid #333}
+button{background:#4CAF50;color:#fff;font-weight:700;cursor:pointer}
+button.danger{background:#E53935}
+button.blue{background:#2196F3}
+
+.container{display:flex;height:100vh;overflow:hidden}
+
+/* Sidebar */
+.sidebar{width:280px;min-width:280px;background:#1e1e1e;border-right:1px solid #333;overflow-y:auto}
+
+/* Main panel - ini yang gue lebarin */
+.main{flex:1;padding:20px;overflow-y:auto;min-width:0}
+
+.card{background:#1e1e1e;padding:20px;border-radius:12px;margin-bottom:15px;border:1px solid #333}
+.chat-box{height:400px;overflow-y:auto;border:1px solid #333;padding:10px;border-radius:8px;margin-bottom:10px;background:#2a2a2a}
+.chat-msg{background:#3a3a3a;padding:10px;border-radius:8px;margin:8px 0;max-width:80%;word-wrap:break-word}
+.chat-msg.admin{background:#4CAF50;margin-left:auto}
+.info{color:#888;font-size:14px}
+h2,h3{margin-bottom:15px}
+.badge{background:#2196F3;padding:2px 8px;border-radius:12px;font-size:12px}
+.user-item{padding:15px;border-bottom:1px solid #333;cursor:pointer}
+.user-item:hover,.user-item.active{background:#2a2a2a}
+
+/* Grid buat tombol koin biar gak kepotong */
+.coin-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* Responsive: HP stack ke bawah */
+@media (max-width: 900px){
+  .container{flex-direction:column;height:auto}
+  .sidebar{width:100%;min-width:100%;height:300px;border-right:none;border-bottom:1px solid #333}
+  .main{padding:15px}
+  .coin-grid{grid-template-columns:1fr}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginPage" class="login-box">
+  <h2>Admin Login</h2>
+  <input type="email" id="adminEmail" placeholder="Email Admin">
+  <input type="password" id="adminPass" placeholder="Password">
+  <button onclick="loginAdmin()">LOGIN</button>
+  <p class="info">Pakai akun yang udah dibuat di Firebase Auth</p>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel" class="container hide">
+  <div class="sidebar">
+    <div style="padding:15px;border-bottom:1px solid #333">
+      <h3>Users <span class="badge" id="userCount">0</span></h3>
+      <input type="text" id="searchUser" placeholder="Cari UID/Email/Nama" oninput="filterUsers()">
+      <button class="blue" onclick="loadAllUsers()">REFRESH</button>
+    </div>
+    <div id="userList"><p class="info" style="padding:15px">Loading users...</p></div>
+  </div>
+
+  <div class="main">
+    <div id="noUserSelected" class="card">
+      <h3>← Pilih user di sebelah kiri</h3>
+      <p class="info">Klik user untuk lihat detail, isi koin, dan balas chat</p>
+    </div>
+
+    <div id="userDetail" class="hide">
+      <div class="card">
+        <h3>Info User</h3>
+        <p><b>UID:</b> <span id="detailUID" style="word-break:break-all"></span></p>
+        <p><b>Email:</b> <span id="detailEmail"></span></p>
+        <p><b>Nama:</b> <span id="detailName"></span></p>
+        <p><b>Koin:</b> <span id="detailCoins">0</span> 🪙</p>
+        <p><b>Saldo:</b> <span id="detailBalance">Rp 0</span></p>
+      </div>
+
+      <div class="card">
+        <h3>Isi Koin</h3>
+        <input type="number" id="coinAmount" placeholder="Jumlah koin">
+        <div class="coin-grid">
+          <button onclick="addCoins()">+ TAMBAH KOIN</button>
+          <button class="danger" onclick="deductCoins()">- KURANGI KOIN</button>
+          <button onclick="setCoins(8000)">SET 8000 KOIN</button>
+          <button onclick="setCoins(15000)">SET 15000 KOIN</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Chat CS</h3>
+        <div class="chat-box" id="chatBox"></div>
+        <textarea id="replyInput" placeholder="Ketik balasan..." rows="3"></textarea>
+        <button class="blue" onclick="sendReply()">KIRIM BALASAN</button>
+      </div>
+
+      <div class="card">
+        <h3>Buka Fitur Premium</h3>
+        <div class="coin-grid">
+          <button onclick="unlockFeature('tabungan')">BUKA TABUNGAN</button>
+          <button onclick="unlockFeature('arisan')">BUKA ARISAN</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, doc, getDoc, updateDoc, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, increment, arrayUnion, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDG4eMhJRsN2uBdXJmBadxfIa76euudMQw",
+  authDomain: "catatn-4cf7a.firebaseapp.com",
+  projectId: "catatn-4cf7a",
+  storageBucket: "catatn-4cf7a.firebasestorage.app",
+  messagingSenderId: "380929865108",
+  appId: "1:380929865108:web:04f7a9b3d2a38328a34b81"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let selectedUID = null;
+let allUsers = [];
+let unsubscribeChat = null;
+
+window.loginAdmin = async () => {
+  try{
+    await signInWithEmailAndPassword(auth, adminEmail.value, adminPass.value);
+  }catch(e){
+    alert('Login gagal: ' + e.message);
+  }
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if(user){
+    document.getElementById('loginPage').classList.add('hide');
+    document.getElementById('adminPanel').classList.remove('hide');
+    loadAllUsers();
+  }else{
+    document.getElementById('loginPage').classList.remove('hide');
+    document.getElementById('adminPanel').classList.add('hide');
+  }
+});
+
+async function loadAllUsers(){
+  try{
+    document.getElementById('userList').innerHTML = '<p class="info" style="padding:15px">Loading...</p>';
+    
+    const q = query(collection(db, "users"));
+    const snap = await getDocs(q);
+    
+    allUsers = [];
+    snap.forEach(doc => {
+      allUsers.push({uid: doc.id, ...doc.data()});
+    });
+    
+    document.getElementById('userCount').textContent = allUsers.length;
+    renderUserList(allUsers);
+    
+    if(allUsers.length === 0){
+      document.getElementById('userList').innerHTML = '<p class="info" style="padding:15px">Belum ada user yang daftar</p>';
+    }
+  }catch(e){
+    document.getElementById('userList').innerHTML = '<p class="info" style="padding:15px;color:#E53935">Error: ' + e.message + '</p>';
+    console.error(e);
+  }
+}
+
+function renderUserList(users){
+  const list = document.getElementById('userList');
+  list.innerHTML = users.map(u => `
+    <div class="user-item" data-uid="${u.uid}" onclick="selectUser('${u.uid}', this)">
+      <b>${u.name || 'No Name'}</b><br>
+      <small class="info">${u.email || 'No Email'}</small><br>
+      <small>UID: ${u.uid.substring(0,15)}...</small><br>
+      <small>🪙 ${u.coins || 0} | Rp ${(u.balance || 0).toLocaleString('id-ID')}</small>
+    </div>
+  `).join('');
+}
+
+window.filterUsers = () => {
+  const q = searchUser.value.toLowerCase();
+  const filtered = allUsers.filter(u => 
+    (u.email && u.email.toLowerCase().includes(q)) || 
+    u.uid.toLowerCase().includes(q) ||
+    (u.name && u.name.toLowerCase().includes(q))
+  );
+  renderUserList(filtered);
+}
+
+window.selectUser = async (uid, element) => {
+  selectedUID = uid;
+  document.getElementById('noUserSelected').classList.add('hide');
+  document.getElementById('userDetail').classList.remove('hide');
+  
+  document.querySelectorAll('.user-item').forEach(el => el.classList.remove('active'));
+  element.classList.add('active');
+  
+  try{
+    const userDoc = await getDoc(doc(db, "users", uid));
+    const data = userDoc.data();
+    
+    document.getElementById('detailUID').textContent = uid;
+    document.getElementById('detailEmail').textContent = data.email || '-';
+    document.getElementById('detailName').textContent = data.name || '-';
+    document.getElementById('detailCoins').textContent = data.coins || 0;
+    document.getElementById('detailBalance').textContent = 'Rp ' + (data.balance || 0).toLocaleString('id-ID');
+    
+    loadChat(uid);
+  }catch(e){
+    alert('Gagal load user: ' + e.message);
+  }
+}
+
+async function loadChat(uid){
+  if(unsubscribeChat) unsubscribeChat();
+  
+  try{
+    const q = query(collection(db, "users", uid, "chat"), orderBy("timestamp","asc"));
+    unsubscribeChat = onSnapshot(q, (snap)=>{
+      let html = '';
+      snap.forEach(doc=>{
+        const c = doc.data();
+        const time = c.timestamp ? new Date(c.timestamp.seconds * 1000).toLocaleTimeString('id-ID') : '';
+        html += `<div class="chat-msg ${c.sender}">
+          <div>${c.message}</div>
+          <small style="opacity:0.7">${time}</small>
+        </div>`;
+      });
+      document.getElementById('chatBox').innerHTML = html || '<p class="info">Belum ada chat</p>';
+      document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
+    });
+  }catch(e){
+    document.getElementById('chatBox').innerHTML = '<p class="info" style="color:#E53935">Error load chat: ' + e.message + '</p>';
+  }
+}
+
+window.addCoins = async () => {
+  const amount = parseInt(coinAmount.value);
+  if(!amount || amount <= 0) return alert('Masukkan jumlah valid');
+  
+  await updateDoc(doc(db, "users", selectedUID), {
+    coins: increment(amount)
+  });
+  
+  document.getElementById('detailCoins').textContent = parseInt(document.getElementById('detailCoins').textContent) + amount;
+  coinAmount.value = '';
+  alert(`Berhasil tambah ${amount} koin!`);
+  loadAllUsers();
+}
+
+window.deductCoins = async () => {
+  const amount = parseInt(coinAmount.value);
+  if(!amount || amount <= 0) return alert('Masukkan jumlah valid');
+  
+  const current = parseInt(document.getElementById('detailCoins').textContent);
+  const newAmount = Math.max(0, current - amount);
+  
+  await updateDoc(doc(db, "users", selectedUID), {
+    coins: newAmount
+  });
+  
+  document.getElementById('detailCoins').textContent = newAmount;
+  coinAmount.value = '';
+  alert(`Berhasil kurangi ${amount} koin!`);
+  loadAllUsers();
+}
+
+window.setCoins = async (amount) => {
+  if(!confirm(`Set koin jadi ${amount}?`)) return;
+  
+  await updateDoc(doc(db, "users", selectedUID), {
+    coins: amount
+  });
+  
+  document.getElementById('detailCoins').textContent = amount;
+  alert(`Koin di-set jadi ${amount}!`);
+  loadAllUsers();
+}
+
+window.sendReply = async () => {
+  const msg = replyInput.value.trim();
+  if(!msg) return;
+  
+  try{
+    await addDoc(collection(db, "users", selectedUID, "chat"), {
+      message: msg,
+      sender: 'admin',
+      timestamp: serverTimestamp()
+    });
+    replyInput.value = '';
+  }catch(e){
+    alert('Gagal kirim: ' + e.message);
+  }
+}
+
+window.unlockFeature = async (feature) => {
+  await updateDoc(doc(db, "users", selectedUID), {
+    unlockedFeatures: arrayUnion(feature)
+  });
+  alert(`Fitur ${feature} berhasil dibuka!`);
+}
+</script>
+</body>
+</html>

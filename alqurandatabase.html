@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Al Quran</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#f2f2f2;
+  transition: all 0.3s;
+}
+
+.dark{
+  background:#121212;
+  color:gold;
+}
+
+header{
+  background:#0b8457;
+  color:white;
+  padding:15px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  transition: background 0.3s, color 0.3s;
+}
+
+header button{
+  cursor:pointer;
+  background:rgba(255,255,255,0.2);
+  border:none;
+  color:white;
+  padding:8px 12px;
+  border-radius:8px;
+  font-size:18px;
+}
+
+.search{
+  width:100%;
+  padding:10px;
+  border:none;
+  outline:none;
+  transition: background 0.3s, color 0.3s;
+}
+
+.card{
+  background:white;
+  margin:10px;
+  padding:15px;
+  border-radius:10px;
+  box-shadow:0 2px 5px rgba(0,0,0,0.2);
+  transition: all 0.3s;
+}
+
+.dark .card{
+  background:#1e1e1e;
+}
+
+.arab{
+  font-size:28px;
+  text-align:right;
+  margin-bottom:10px;
+}
+
+button{
+  background:#0b8457;
+  color:white;
+  border:none;
+  padding:8px 12px;
+  border-radius:8px;
+  margin:3px;
+  cursor:pointer;
+  transition: background 0.3s, color 0.3s;
+}
+
+.menu{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  padding:10px;
+}
+
+/* PANEL TEMA WARNA */
+#themeFloating{
+  position:fixed;
+  top:50%;
+  right:-320px;
+  transform:translateY(-50%);
+  width:280px;
+  max-height:80vh;
+  overflow-y:auto;
+  background:#0b8457;
+  color:white;
+  border-radius:15px 0 0 15px;
+  padding:15px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.3);
+  z-index:1000;
+  transition:right 0.5s, background 0.3s, color 0.3s;
+}
+
+#themeFloating.show{
+  right:0;
+}
+
+.themeSelector{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:8px;
+  margin-top:10px;
+}
+.themeSelector button{
+  padding:10px 5px;
+  font-size:12px;
+  border:2px solid rgba(255,255,255,0.3);
+}
+</style>
+
+<script>
+document.addEventListener("contextmenu", e=> e.preventDefault());
+document.onkeydown=function(e){
+  if(e.keyCode==123) return false;
+  if(e.ctrlKey && e.shiftKey && e.keyCode==73) return false;
+};
+
+let currentTheme='default';
+
+function dark(){
+  document.body.classList.toggle("dark");
+}
+
+function toggleTheme(){
+  let panel=document.getElementById("themeFloating");
+  panel.classList.toggle("show");
+}
+
+function changeTheme(theme){
+  const body=document.body;
+  const header=document.querySelector("header");
+  const cards=document.querySelectorAll(".card");
+  const buttons=document.querySelectorAll("button");
+  const themePanel=document.getElementById("themeFloating");
+  
+  currentTheme=theme;
+  
+  switch(theme){
+    case 'green':
+      body.style.background="#e8f5e9"; header.style.background="#0b8457"; themePanel.style.background="#0b8457";
+      cards.forEach(c=>c.style.background="#c8e6c9"); buttons.forEach(b=>b.style.background="#0b8457");
+      break;
+    case 'blue':
+      body.style.background="#e3f2fd"; header.style.background="#1976d2"; themePanel.style.background="#1976d2";
+      cards.forEach(c=>c.style.background="#bbdefb"); buttons.forEach(b=>b.style.background="#1976d2");
+      break;
+    case 'orange':
+      body.style.background="#fff3e0"; header.style.background="#ff9800"; themePanel.style.background="#ff9800";
+      cards.forEach(c=>c.style.background="#ffe0b2"); buttons.forEach(b=>b.style.background="#ff9800");
+      break;
+    case 'purple':
+      body.style.background="#f3e5f5"; header.style.background="#9c27b0"; themePanel.style.background="#9c27b0";
+      cards.forEach(c=>c.style.background="#e1bee7"); buttons.forEach(b=>b.style.background="#9c27b0");
+      break;
+    case 'red':
+      body.style.background="#ffebee"; header.style.background="#f44336"; themePanel.style.background="#f44336";
+      cards.forEach(c=>c.style.background="#ffcdd2"); buttons.forEach(b=>b.style.background="#f44336");
+      break;
+    case 'brown':
+      body.style.background="#efebe9"; header.style.background="#795548"; themePanel.style.background="#795548";
+      cards.forEach(c=>c.style.background="#d7ccc8"); buttons.forEach(b=>b.style.background="#795548");
+      break;
+    case 'cyan':
+      body.style.background="#e0f7fa"; header.style.background="#00acc1"; themePanel.style.background="#00acc1";
+      cards.forEach(c=>c.style.background="#b2ebf2"); buttons.forEach(b=>b.style.background="#00acc1");
+      break;
+    case 'pink':
+      body.style.background="#fce4ec"; header.style.background="#e91e63"; themePanel.style.background="#e91e63";
+      cards.forEach(c=>c.style.background="#f8bbd0"); buttons.forEach(b=>b.style.background="#e91e63");
+      break;
+    case 'yellow':
+      body.style.background="#fffde7"; header.style.background="#fbc02d"; themePanel.style.background="#fbc02d";
+      cards.forEach(c=>c.style.background="#fff9c4"); buttons.forEach(b=>b.style.background="#fbc02d");
+      break;
+    case 'teal':
+      body.style.background="#e0f2f1"; header.style.background="#00796b"; themePanel.style.background="#00796b";
+      cards.forEach(c=>c.style.background="#b2dfdb"); buttons.forEach(b=>b.style.background="#00796b");
+      break;
+    case 'indigo':
+      body.style.background="#e8eaf6"; header.style.background="#3f51b5"; themePanel.style.background="#3f51b5";
+      cards.forEach(c=>c.style.background="#c5cae9"); buttons.forEach(b=>b.style.background="#3f51b5");
+      break;
+    case 'lime':
+      body.style.background="#f9fbe7"; header.style.background="#c0ca33"; themePanel.style.background="#c0ca33";
+      cards.forEach(c=>c.style.background="#f0f4c3"); buttons.forEach(b=>b.style.background="#c0ca33");
+      break;
+    case 'amber':
+      body.style.background="#fff8e1"; header.style.background="#ffc107"; themePanel.style.background="#ffc107";
+      cards.forEach(c=>c.style.background="#ffecb3"); buttons.forEach(b=>b.style.background="#ffc107");
+      break;
+    case 'deep-orange':
+      body.style.background="#fbe9e7"; header.style.background="#ff5722"; themePanel.style.background="#ff5722";
+      cards.forEach(c=>c.style.background="#ffccbc"); buttons.forEach(b=>b.style.background="#ff5722");
+      break;
+    case 'blue-grey':
+      body.style.background="#eceff1"; header.style.background="#607d8b"; themePanel.style.background="#607d8b";
+      cards.forEach(c=>c.style.background="#cfd8dc"); buttons.forEach(b=>b.style.background="#607d8b");
+      break;
+    case 'black':
+      body.style.background="#212121"; header.style.background="#000"; themePanel.style.background="#000";
+      cards.forEach(c=>c.style.background="#424242"); buttons.forEach(b=>b.style.background="#000");
+      body.style.color="white"; cards.forEach(c=>c.style.color="white");
+      break;
+    case 'quran-green':
+      body.style.background="#e8f5e9"; header.style.background="#1b5e20"; themePanel.style.background="#1b5e20";
+      cards.forEach(c=>c.style.background="#a5d6a7"); buttons.forEach(b=>b.style.background="#1b5e20");
+      break;
+    case 'quran-gold':
+      body.style.background="#fff8e1"; header.style.background="#c9a227"; themePanel.style.background="#c9a227";
+      cards.forEach(c=>c.style.background="#ffe082"); buttons.forEach(b=>b.style.background="#c9a227");
+      break;
+    case 'masjid-hijau':
+      body.style.background="#e8f5e9"; header.style.background="#00695c"; themePanel.style.background="#00695c";
+      cards.forEach(c=>c.style.background="#80cbc4"); buttons.forEach(b=>b.style.background="#00695c");
+      break;
+    
+    case 'masjid-emas':
+      body.style.background="#fff8e1"; header.style.background="#bf9000"; themePanel.style.background="#bf9000";
+      cards.forEach(c=>c.style.background="#ffd54f"); buttons.forEach(b=>b.style.background="#bf9000");
+      break;
+    case 'masjid-maroon':
+      body.style.background="#ffebee"; header.style.background="#800000"; themePanel.style.background="#800000";
+      cards.forEach(c=>c.style.background="#ef9a9a"); buttons.forEach(b=>b.style.background="#800000");
+      break;
+    default: // default
+      body.style.background="#f2f2f2"; header.style.background="#0b8457"; themePanel.style.background="#0b8457";
+      cards.forEach(c=>c.style.background="white"); buttons.forEach(b=>b.style.background="#0b8457");
+      body.style.color="#1a1a1a"; cards.forEach(c=>c.style.color="#1a1a1a");
+  }
+}
+</script>
+</head>
+
+<body>
+
+<header>
+  <div>📖 Al-Qur'an</div>
+  <div>
+    <button onclick="dark()">🌙</button>
+    <button onclick="toggleTheme()">🎨 Tema</button>
+  </div>
+</header>
+
+<div class="menu">
+  <button onclick="loadSurah()">Surah</button>
+  <button onclick="showBookmark()">Bookmark</button>
+</div>
+
+<input class="search" id="search" placeholder="Cari surah..." onkeyup="cariSurah()">
+
+<div id="main">Loading...</div>
+
+<!-- PANEL TEMA WARNA -->
+<div id="themeFloating">
+  <div style="text-align:center; font-weight:bold">🎨 Pilih Tema Warna</div>
+  <div class="themeSelector">
+    <button onclick="changeTheme('green')">Hijau</button>
+    <button onclick="changeTheme('blue')">Biru</button>
+    <button onclick="changeTheme('orange')">Orange</button>
+    <button onclick="changeTheme('purple')">Ungu</button>
+    <button onclick="changeTheme('red')">Merah</button>
+    <button onclick="changeTheme('brown')">Coklat</button>
+    <button onclick="changeTheme('cyan')">Cyan</button>
+    <button onclick="changeTheme('pink')">Pink</button>
+    <button onclick="changeTheme('yellow')">Kuning</button>
+    <button onclick="changeTheme('teal')">Teal</button>
+    <button onclick="changeTheme('indigo')">Indigo</button>
+    <button onclick="changeTheme('lime')">Lime</button>
+    <button onclick="changeTheme('amber')">Amber</button>
+    <button onclick="changeTheme('deep-orange')">Oranye Tua</button>
+    <button onclick="changeTheme('blue-grey')">Biru Abu</button>
+    <button onclick="changeTheme('black')">Hitam</button>
+    <button onclick="changeTheme('default')">Default</button>
+  </div>
+</div>
+
+<script>
+const API="https://equran.id/api/v2";
+let surahList=[];
+let cache={};
+
+function loadSurah(){
+  fetch(API+"/surat")
+  .then(r=>r.json())
+  .then(d=>{
+    surahList=d.data;
+    showSurah(surahList);
+  });
+}
+
+function showSurah(data){
+  let html="";
+  data.forEach(s=>{
+    html+=`
+      <div class="card" onclick="loadAyat(${s.nomor})">
+        <b>${s.nomor}. ${s.namaLatin}</b><br>
+        ${s.arti} • ${s.jumlahAyat} ayat
+      </div>
+    `;
+  });
+  document.getElementById("main").innerHTML=html;
+}
+
+function cariSurah(){
+  let key=document.getElementById("search").value.toLowerCase();
+  let hasil=surahList.filter(s=> s.namaLatin.toLowerCase().includes(key));
+  showSurah(hasil);
+}
+
+function loadAyat(no){
+  if(cache[no]){
+    renderAyat(cache[no]);
+    return;
+  }
+  document.getElementById("main").innerHTML="Loading ayat...";
+  fetch(API+"/surat/"+no)
+  .then(r=>r.json())
+  .then(d=>{
+    cache[no]=d.data;
+    renderAyat(d.data);
+  });
+}
+
+function bookmark(ayat,arti){
+  let data=JSON.parse(localStorage.getItem("bookmark")||"[]");
+  data.push({ayat:ayat,arti:arti});
+  localStorage.setItem("bookmark",JSON.stringify(data));
+  alert("Bookmark disimpan");
+}
+
+function showBookmark(){
+  let data=JSON.parse(localStorage.getItem("bookmark")||"[]");
+  let html="<h3 style='padding:10px'>Bookmark</h3>";
+  data.forEach(b=>{
+    html+=`
+      <div class="card">
+        <div class="arab">${b.ayat}</div>
+        <div>${b.arti}</div>
+      </div>
+    `;
+  });
+  document.getElementById("main").innerHTML=html;
+}
+
+function renderAyat(surah){
+  let html=`
+    <div style="padding:10px">
+      <button onclick="showSurah(surahList)">⬅ Kembali</button>
+      <h3>${surah.namaLatin}</h3>
+      <button onclick="playAll()">▶ Putar Otomatis</button>
+    </div>
+  `;
+  surah.ayat.forEach((a,i)=>{
+    let next=i+1;
+    html+=`
+      <div class="card">
+        <div class="arab">${a.teksArab}</div>
+        <div>${a.teksLatin}</div>
+        <div>${a.teksIndonesia}</div>
+        <button onclick='bookmark("${a.teksArab}","${a.teksIndonesia}")'>⭐ Bookmark</button>
+        <audio controls id="audio${i}" src="${a.audio['05']}" onended="autoPlay(${next})"></audio>
+      </div>
+    `;
+  });
+  document.getElementById("main").innerHTML=html;
+}
+
+function playAll(){
+  let first = document.getElementById("audio0");
+  if(first){
+    first.play().then(()=>{
+      console.log("Autoplay aktif");
+    }).catch(e=>{
+      alert("Klik tombol play dulu bro, browser blokir autoplay");
+    });
+  }
+}
+
+function autoPlay(n){
+  let next=document.getElementById("audio"+n);
+  if(next){
+    next.play().catch(()=>{});
+  }
+}
+function pauseOthers(current){
+  // Pause audio lain biar gak tabrakan
+  let allAudio = document.querySelectorAll("audio");
+  allAudio.forEach((aud, idx)=>{
+    if(idx != current) aud.pause();
+  });
+}
+
+loadSurah();
+</script>
+
+</body>
+</html>

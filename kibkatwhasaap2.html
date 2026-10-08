@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<title>Kompas Kiblat</title>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap');
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        background: #000;
+        color: #fff;
+        font-family: 'Space Grotesk', sans-serif;
+        min-height: 100vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* === BACKGROUND AURORA === */
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: 
+            radial-gradient(circle at 20% 20%, rgba(0,255,200,0.15) 0%, transparent 40%),
+            radial-gradient(circle at 80% 80%, rgba(0,150,255,0.15) 0%, transparent 40%),
+            #000;
+        filter: blur(40px);
+        animation: aurora 8s ease-in-out infinite alternate;
+        z-index: 0;
+    }
+    @keyframes aurora {
+        0% { transform: rotate(0deg) scale(1); }
+        100% { transform: rotate(360deg) scale(1.2); }
+    }
+
+    /* === KOMPAS WRAPPER === */
+   .kompas-wrapper {
+        position: relative;
+        width: 100%;
+        max-width: 350px;
+        aspect-ratio: 1/1;
+        z-index: 10;
+    }
+
+    /* === KOMPAS BULAT UTAMA === */
+   .kompas {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: 
+            radial-gradient(circle at 30% 30%, rgba(255,255,255,0.08), transparent 60%),
+            radial-gradient(circle, #0d1b2a 0%, #000814 70%);
+        border: 4px solid transparent;
+        background-clip: padding-box;
+        box-shadow: 
+            0 0 0 2px rgba(0,255,200,0.5),
+            0 0 60px rgba(0,255,200,0.4),
+            inset 0 0 80px rgba(0,0,0,0.8);
+        transition: transform 0.05s linear;
+    }
+
+    /* Lingkaran Glow Luar */
+   .kompas::before {
+        content: '';
+        position: absolute;
+        inset: -8px;
+        border-radius: 50%;
+        background: conic-gradient(from 0deg, #00FFC8, #00BFFF, #FF00FF, #00FFC8);
+        filter: blur(15px);
+        opacity: 0.6;
+        animation: spin 10s linear infinite;
+        z-index: -1;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Garis Derajat */
+   .ticks {
+        position: absolute;
+        inset: 0;
+    }
+   .ticks span {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        width: 2px;
+        height: 100%;
+        transform-origin: center;
+    }
+   .ticks span::before {
+        content: '';
+        position: absolute;
+        top: 8px;
+        left: -1px;
+        width: 2px;
+        height: 12px;
+        background: rgba(255,255,255,0.3);
+    }
+   .ticks span:nth-child(6n)::before {
+        height: 18px;
+        background: #00FFC8;
+        box-shadow: 0 0 8px #00FFC8;
+    }
+
+    /* Angka Derajat */
+   .numbers {
+        position: absolute;
+        inset: 0;
+        font-size: 14px;
+        font-weight: 700;
+    }
+   .numbers div {
+        position: absolute;
+        color: rgba(255,255,255,0.6);
+    }
+
+    /* Mata Angin */
+   .wind {
+        position: absolute;
+        inset: 25px;
+        font-weight: 700;
+        font-size: 22px;
+    }
+   .wind div {
+        position: absolute;
+        text-shadow: 0 0 15px currentColor;
+    }
+   .N { top: 0; left: 50%; transform: translateX(-50%); color: #FF3B8D; }
+   .E { top: 50%; right: 0; transform: translateY(-50%); color: #00FFC8; }
+   .S { bottom: 0; left: 50%; transform: translateX(-50%); color: #00FFC8; }
+   .W { top: 50%; left: 0; transform: translateY(-50%); color: #00FFC8; }
+
+    /* === JARUM KIBLAT ESTETIK === */
+   .jarum {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 8px;
+        height: 45%;
+        margin-left: -4px;
+        margin-top: -45%;
+        transform-origin: bottom center;
+        transition: transform 0.08s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 20;
+    }
+   .jarum::before {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to top, #00FFC8, #FFFFFF);
+        clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+        filter: drop-shadow(0 0 15px #00FFC8);
+    }
+   .jarum::after {
+        content: '🕋';
+        position: absolute;
+        top: -35px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 28px;
+        filter: drop-shadow(0 0 15px #FFD700);
+    }
+
+    /* Efek Pas Kiblat */
+   .jarum.akurat {
+        animation: kiblat-glow 0.4s ease-in-out infinite;
+    }
+    @keyframes kiblat-glow {
+        0%,100% { filter: drop-shadow(0 0 15px #00FFC8) drop-shadow(0 0 30px #FFD700); }
+        50% { filter: drop-shadow(0 0 30px #00FFC8) drop-shadow(0 0 50px #FFD700); }
+    }
+
+    /* Titik Tengah */
+   .center-dot {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 24px;
+        height: 24px;
+        background: radial-gradient(circle, #fff, #00FFC8);
+        border: 4px solid #000;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 0 25px #00FFC8;
+        z-index: 30;
+    }
+
+    /* === PANEL INFO DI BAWAH === */
+   .info-panel {
+        margin-top: 30px;
+        width: 100%;
+        max-width: 350px;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(0,255,200,0.3);
+        border-radius: 24px;
+        padding: 20px;
+        text-align: center;
+        z-index: 10;
+    }
+   .info-panel h2 {
+        font-size: 48px;
+        color: #00FFC8;
+        text-shadow: 0 0 25px rgba(0,255,200,0.8);
+        font-weight: 700;
+        line-height: 1;
+    }
+   .info-panel .row {
+        display: flex;
+        justify-content: space-between;
+        margin: 12px 0;
+        font-size: 14px;
+    }
+   .info-panel .label { opacity: 0.7; }
+   .info-panel .value { font-weight: 700; color: #FFD700; }
+   .status {
+        margin-top: 12px;
+        font-size: 12px;
+        opacity: 0.8;
+        color: #00FFC8;
+    }
+
+    /* Overlay Izin */
+   .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.98);
+        z-index: 100;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        gap: 20px;
+        padding: 30px;
+    }
+   .overlay h2 { color: #00FFC8; text-shadow: 0 0 20px #00FFC8; font-size: 28px; }
+   .overlay button {
+        padding: 18px 45px;
+        background: linear-gradient(135deg, #00FFC8, #00BFFF);
+        border: none;
+        border-radius: 50px;
+        color: #000;
+        font-weight: 700;
+        font-size: 16px;
+        cursor: pointer;
+        box-shadow: 0 8px 30px rgba(0,255,200,0.5);
+        font-family: 'Space Grotesk', sans-serif;
+    }
+   .error { color: #FF3B8D !important; }
+</style>
+</head>
+<body>
+<div class="overlay" id="overlay">
+    <h2>🧭 KOMPAS KIBLAT</h2>
+    <p id="overlayText" style="opacity:0.8; text-align:center; line-height:1.6;">
+        Izinkan Lokasi & Sensor<br>untuk akurasi arah Kiblat
+    </p>
+    <button id="btn-izin">IZINKAN & MULAI</button>
+</div>
+
+<div class="kompas-wrapper">
+    <div class="kompas" id="kompas">
+        <div class="ticks" id="ticks"></div>
+        <div class="numbers" id="numbers"></div>
+        <div class="wind">
+            <div class="N">N</div>
+            <div class="E">E</div>
+            <div class="S">S</div>
+            <div class="W">W</div>
+        </div>
+        <div class="jarum" id="jarum"></div>
+        <div class="center-dot"></div>
+    </div>
+</div>
+
+<div class="info-panel">
+    <h2 id="derajat">---°</h2>
+    <div class="row">
+        <span class="label">Arah</span>
+        <span class="value" id="arahText">-</span>
+    </div>
+    <div class="row">
+        <span class="label">Lokasi</span>
+        <span class="value" id="lokasi">Mencari...</span>
+    </div>
+    <div class="row">
+        <span class="label">Jarak ke Mekkah</span>
+        <span class="value" id="jarak">-</span>
+    </div>
+    <div class="status" id="status">Menunggu izin...</div>
+</div>
+
+<script>
+const kabah = { lat: 21.4225, lon: 39.8262 };
+let arahKiblat = 0, audioCtx, lastBeep = 0;
+
+// Generate ticks & numbers
+const ticks = document.getElementById('ticks');
+const numbers = document.getElementById('numbers');
+for(let i = 0; i < 360; i += 6) {
+    let tick = document.createElement('span');
+    tick.style.transform = `rotate(${i}deg)`;
+    ticks.appendChild(tick);
+    
+    if(i % 30 === 0) {
+        let num = document.createElement('div');
+        let angle = i * Math.PI / 180;
+        let r = 42; // persen dari center
+        num.style.left = `${50 + r * Math.sin(angle)}%`;
+        num.style.top = `${50 - r * Math.cos(angle)}%`;
+        num.style.transform = 'translate(-50%, -50%)';
+        num.textContent = i;
+        numbers.appendChild(num);
+    }
+}
+
+function initAudio() {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function playBeep() {
+    if(!audioCtx || Date.now() - lastBeep < 1000) return;
+    lastBeep = Date.now();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.frequency.value = 880; gain.gain.value = 0.2;
+    osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+}
+
+async function hitungKiblat(lat, lon) {
+    const dLon = (kabah.lon - lon) * Math.PI / 180;
+    const lat1 = lat * Math.PI / 180;
+    const lat2 = kabah.lat * Math.PI / 180;
+    const y = Math.sin(dLon) * Math.cos(lat2);
+    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+    arahKiblat = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+
+    const R = 6371;
+    const dLat = (kabah.lat - lat) * Math.PI / 180;
+    const dLon2 = (kabah.lon - lon) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon2/2)**2;
+    const jarak = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    document.getElementById('jarak').textContent = `${jarak.toFixed(0)} km`;
+
+    try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+        const data = await res.json();
+        const kota = data.address.city || data.address.county || data.address.state || 'Lokasi Anda';
+        document.getElementById('lokasi').textContent = kota;
+    } catch(e) {
+        document.getElementById('lokasi').textContent = `${lat.toFixed(3)}, ${lon.toFixed(3)}`;
+    }
+}
+
+function updateKompas(event) {
+    let heading = event.webkitCompassHeading || Math.abs(event.alpha - 360) || 360 - event.alpha;
+    
+    // 1. Kompas bulat muter lawan arah HP = Utara selalu di atas
+    document.getElementById('kompas').style.transform = `rotate(${-heading}deg)`;
+    
+    // 2. Jarum selalu nunjuk kiblat kemanapun HP muter
+    let selisih = (arahKiblat - heading + 360) % 360;
+    document.getElementById('jarum').style.transform = `rotate(${selisih}deg)`;
+    
+    // 3. Update info
+    document.getElementById('derajat').textContent = Math.round(arahKiblat) + '°';
+    let arah = ['Utara','Timur Laut','Timur','Tenggara','Selatan','Barat Daya','Barat','Barat Laut'];
+    document.getElementById('arahText').textContent = arah[Math.round(arahKiblat / 45) % 8];
+
+    // 4. Efek getar + bunyi pas kiblat ±2.5 derajat
+    const akurat = selisih < 2.5 || selisih > 357.5;
+    document.getElementById('jarum').classList.toggle('akurat', akurat);
+    if(akurat) {
+        if(navigator.vibrate) navigator.vibrate(100);
+        playBeep();
+        document.getElementById('status').textContent = '✓ Tepat Arah Kiblat';
+    } else {
+        document.getElementById('status').textContent = 'Arahkan ke Kiblat';
+    }
+}
+
+document.getElementById('btn-izin').onclick = () => {
+    initAudio();
+    document.getElementById('overlayText').textContent = 'Meminta izin GPS...';
+    
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+        document.getElementById('overlay').style.display = 'none';
+        await hitungKiblat(pos.coords.latitude, pos.coords.longitude);
+        
+        try {
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                const res = await DeviceOrientationEvent.requestPermission();
+                if (res === 'granted') window.addEventListener('deviceorientation', updateKompas);
+                else throw new Error('Sensor ditolak');
+            } else {
+                window.addEventListener('deviceorientationabsolute', updateKompas, true);
+                window.addEventListener('deviceorientation', updateKompas, true);
+            }
+            document.getElementById('status').textContent = 'Kalibrasi: putar HP angka 8';
+        } catch(e) {
+            document.getElementById('status').innerHTML = '<span class="error">Sensor Error</span>';
+        }
+    }, (err) => {
+        let pesan = 'Error: ';
+        if(err.code === 1) pesan += 'Izin Lokasi Ditolak. Aktifkan di Pengaturan';
+        else if(err.code === 2) pesan += 'GPS Mati. Nyalakan GPS';
+        else pesan += 'Timeout';
+        document.getElementById('overlayText').innerHTML = `<span class="error">${pesan}</span>`;
+        document.getElementById('btn-izin').textContent = 'COBA LAGI';
+    }, { enableHighAccuracy: true, timeout: 10000 });
+};
+
+// Cek HTTPS
+if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+    document.getElementById('overlayText').innerHTML = '<span class="error">WAJIB HTTPS!</span><br>Upload ke Netlify dulu bro';
+    document.getElementById('btn-izin').style.display = 'none';
+}
+</script>
+</body>
+</html>
